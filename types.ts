@@ -156,13 +156,9 @@ export type ResponseType = {
   msg?: string;
 };
 
-export type WalletType = {
-  id?: string;
+export type ProductType = {
+  id: string;
   name: string;
-  amount?: number;
-  totalIncome?: number;
-  totalExpenses?: number;
   image: any;
-  uid?: string;
-  created?: Date;
+  price: number;
 };
