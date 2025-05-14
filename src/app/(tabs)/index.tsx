@@ -1,15 +1,5 @@
-import products from "@/assets/data/products";
-import ProductListItem from "@/src/components/ProductListItem";
-import React from "react";
-import { View } from "react-native";
+import { Redirect } from "expo-router";
 
-const MenuScreen = () => {
-  return (
-    <View>
-      <ProductListItem product={products[5]} />
-      <ProductListItem product={products[1]} />
-    </View>
-  );
-};
-
-export default MenuScreen;
+export default function TabIndex() {
+  return <Redirect href={"/menu/"} />;
+}
