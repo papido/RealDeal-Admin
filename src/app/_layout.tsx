@@ -1,19 +1,21 @@
+import CartProvider from "@/src/providers/CartProvider";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { StyleSheet } from "react-native";
 
-const _layout = () => {
+const RootLayout = () => {
   return (
-    <>
+    <CartProvider>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="cart" options={{ presentation: "modal" }} />
       </Stack>
-    </>
+    </CartProvider>
   );
 };
 
-export default _layout;
+export default RootLayout;
 
 const styles = StyleSheet.create({});
