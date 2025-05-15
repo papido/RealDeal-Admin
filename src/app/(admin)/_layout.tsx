@@ -1,0 +1,46 @@
+import { colors } from "@/src/constants/theme";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Tabs } from "expo-router";
+import React from "react";
+import { StyleSheet } from "react-native";
+
+const _layout = () => {
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.light.background,
+        tabBarInactiveTintColor: "gainsboro",
+        tabBarStyle: {
+          backgroundColor: colors.light.tint,
+        },
+      }}
+    >
+      <Tabs.Screen name="index" options={{ href: null }} />
+
+      <Tabs.Screen
+        name="menu"
+        options={{
+          title: "Menu",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="cutlery" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: "Orders",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="th-list" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+};
+
+export default _layout;
+
+const styles = StyleSheet.create({});

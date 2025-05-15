@@ -1,5 +1,6 @@
 import { scale, verticalScale } from "@/utils/styling";
-
+const tintColorLight = "#2f95dc";
+const tintColorDark = "#fff";
 export const colors = {
   primary: "#a3e635",
   primaryLight: "#0ea5e9",
@@ -22,6 +23,20 @@ export const colors = {
   neutral700: "#404040",
   neutral800: "#262626",
   neutral900: "#171717",
+  light: {
+    text: "#000",
+    background: "#fff",
+    tint: tintColorLight,
+    tabIconDefault: "#ccc",
+    tabIconSelected: tintColorLight,
+  },
+  dark: {
+    text: "#fff",
+    background: "#000",
+    tint: tintColorDark,
+    tabIconDefault: "#ccc",
+    tabIconSelected: tintColorDark,
+  },
 };
 
 export const spacingX = {
