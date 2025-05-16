@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
 import React from "react";
@@ -23,8 +22,9 @@ const _layout = () => {
         name="orders"
         options={{
           title: "Orders",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <FontAwesome name="th-list" size={size} color={color} />
           ),
         }}
       />
