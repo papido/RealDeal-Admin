@@ -1,12 +1,51 @@
 import { colors } from "@/src/constants/theme";
+import { useAuth } from "@/src/providers/authProvider";
 import { Link, Stack } from "expo-router";
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  Keyboard,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import Button from "../../components/Button";
 
 const SignInScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+
+  const validateInput = () => {
+    setErrors("");
+    if (!email) {
+      setErrors("Email is required");
+      return false;
+    }
+    if (!password) {
+      setErrors("Password is required");
+      return false;
+    }
+    return true;
+  };
+
+  const onSubmit = async () => {
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+    Keyboard.dismiss();
+    if (!validateInput()) {
+      return;
+    }
+    setLoading(true);
+    const res = await login(trimmedEmail, trimmedPassword);
+    setLoading(false);
+    if (!res.success) {
+      Alert.alert("Sign up", res.msg);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -29,8 +68,12 @@ const SignInScreen = () => {
         secureTextEntry
       />
 
-      <Button text="Sign in" />
-      <Link href="/sign-up" style={styles.textButton}>
+      <Text style={{ color: "red" }}>{errors}</Text>
+
+      <Button loading={loading} onPress={onSubmit}>
+        <Text style={styles.textButton}>Sign In</Text>
+      </Button>
+      <Link href="/sign-up" style={styles.text}>
         Create an account
       </Link>
     </View>
@@ -58,7 +101,13 @@ const styles = StyleSheet.create({
   textButton: {
     alignSelf: "center",
     fontWeight: "bold",
-    color: colors.light.tint,
+    color: colors.dark.text,
+    marginVertical: 10,
+  },
+  text: {
+    alignSelf: "center",
+    fontWeight: "bold",
+    color: colors.light.text,
     marginVertical: 10,
   },
 });

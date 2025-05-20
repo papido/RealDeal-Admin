@@ -6,8 +6,6 @@ import { StyleSheet } from "react-native";
 const _layout = () => {
   return (
     <Tabs>
-      <Tabs.Screen name="index" options={{ href: null }} />
-
       <Tabs.Screen
         name="menu"
         options={{

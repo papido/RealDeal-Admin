@@ -1,15 +1,28 @@
-import orders from "@/assets/data/orders";
-import OrderListItem from "@/src/components/OrderListItem";
-import { FlatList } from "react-native";
+// app/(admin)/orders/list.tsx
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const OrdersScreen = () => {
+// If you're routing via expo-router, import the components dynamically:
+import ActiveScreen from "./active";
+import ArchiveScreen from "./archive";
+
+const Tab = createMaterialTopTabNavigator();
+
+export default function OrderListScreen() {
   return (
-    <FlatList
-      data={orders}
-      renderItem={({ item }) => <OrderListItem order={item} />}
-      contentContainerStyle={{ gap: 10, padding: 10 }}
-    />
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: "white" }}>
+      <Tab.Navigator>
+        <Tab.Screen
+          name="index"
+          component={ActiveScreen}
+          options={{ title: "ACTIVE" }}
+        />
+        <Tab.Screen
+          name="archive"
+          component={ArchiveScreen}
+          options={{ title: "ARCHIVE" }}
+        />
+      </Tab.Navigator>
+    </SafeAreaView>
   );
-};
-
-export default OrdersScreen;
+}

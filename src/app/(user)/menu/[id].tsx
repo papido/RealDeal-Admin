@@ -61,7 +61,9 @@ const ProductDetailsScreen = () => {
       </View>
 
       <Text style={styles.price}>RM{product.price}</Text>
-      <Button onPress={addToCart} text="Add to cart" />
+      <Button onPress={addToCart}>
+        <Text>Add to cart</Text>
+      </Button>
     </View>
   );
 };

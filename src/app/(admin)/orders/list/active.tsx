@@ -2,7 +2,7 @@ import orders from "@/assets/data/orders";
 import OrderListItem from "@/src/components/OrderListItem";
 import { FlatList } from "react-native";
 
-const ArchiveScreen = () => {
+const ActiveScreen = () => {
   return (
     <FlatList
       data={orders}
@@ -12,4 +12,4 @@ const ArchiveScreen = () => {
   );
 };
 
-export default ArchiveScreen;
+export default ActiveScreen;
