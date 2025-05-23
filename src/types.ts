@@ -1,15 +1,24 @@
-export type Product = {
-  id: number;
-  image: string | null;
+export type ProductType = {
+  id?: string;
+  category?: string;
+  images: ProductImageType[];
   name: string;
-  price: number;
+  desc?: string;
+  ingredients?: string;
+  price?: number;
+  uid?: string;
+};
+
+export type ProductImageType = {
+  id: string;
+  uri: string;
 };
 
 export type PizzaSize = "S" | "M" | "L" | "XL";
 
 export type CartItem = {
   id: string;
-  product: Product;
+  product: ProductType;
   product_id: number;
   size: PizzaSize;
   quantity: number;
@@ -37,7 +46,7 @@ export type Order = {
 export type OrderItem = {
   id: number;
   product_id: number;
-  products: Product;
+  products: ProductType;
   order_id: number;
   size: PizzaSize;
   quantity: number;
@@ -54,6 +63,12 @@ export type UserType = {
   name: string | null;
   image?: any;
 } | null;
+
+export type ResponseType = {
+  success: boolean;
+  data?: any;
+  msg?: string;
+};
 
 export type AuthContextType = {
   user: UserType;

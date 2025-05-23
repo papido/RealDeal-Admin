@@ -21,6 +21,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log("firebase user: ", firebaseUser);
       if (firebaseUser) {
+        // if (!firebaseUser.emailVerified) {
+        //   alert('Please verify your email before logging in.');
+        //   auth.signOut();
+        // } else {
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
@@ -28,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         });
         updateUserData(firebaseUser.uid);
         router.replace("/(user)/menu");
+        // }
       } else {
         setUser(null);
       }
@@ -41,7 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return { success: true };
     } catch (error: any) {
       let msg = error.message;
-      // console.log("error message: ", msg)
       if (msg.includes("(auth/invalid-email)")) msg = "Invalid email";
       if (msg.includes("(auth/invalid-credential)")) msg = "Wrong credentials";
       return { success: false, msg };
@@ -59,6 +63,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         email,
         password
       );
+      // let user = response.user;
+      // await sendEmailVerification(user);
+      // alert("Verification email sent. Please check your inbox.");
+
       await setDoc(doc(firestore, "users", response?.user?.uid), {
         username,
         email,
@@ -67,7 +75,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return { success: true };
     } catch (error: any) {
       let msg = error.message;
-      // console.log("error message: ", msg);
       if (msg.includes("(auth/invalid-email)")) msg = "Invalid email";
       if (msg.includes("(auth/email-already-in-use)"))
         msg = "This email is already in use";

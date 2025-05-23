@@ -2,13 +2,13 @@ import { colors } from "@/src/constants/theme";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Image, Pressable, StyleSheet, Text } from "react-native";
-import { Product } from "../types";
+import { ProductType } from "../types";
 
 export const defaultPizzaImage =
   "https://notjustdev-dummy.s3.us-east-2.amazonaws.com/food/default.png";
 
 type ProductListItemProps = {
-  product: Product;
+  product: ProductType;
 };
 
 const ProductListItem = ({ product }: ProductListItemProps) => {
@@ -20,7 +20,7 @@ const ProductListItem = ({ product }: ProductListItemProps) => {
       style={styles.container}
     >
       <Image
-        source={{ uri: product.image || defaultPizzaImage }}
+        source={{ uri: product.images?.[0]?.uri || defaultPizzaImage }}
         style={styles.image}
         resizeMode="contain"
       />

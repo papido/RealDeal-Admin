@@ -1,79 +1,76 @@
+import { createProduct } from "@/services/productService";
 import Button from "@/src/components/Button";
-import { defaultPizzaImage } from "@/src/components/ProductListItem";
+import { ProductImage } from "@/src/components/ProductImage";
 import { colors } from "@/src/constants/theme";
+import { useAuth } from "@/src/providers/authProvider";
+import { ProductType } from "@/src/types";
 import * as ImagePicker from "expo-image-picker";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Image, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import uuid from "react-native-uuid";
 
 const CreateProductScreen = () => {
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
+  const { user } = useAuth();
   const [errors, setErrors] = useState("");
-  const [image, setImage] = useState<string | null>(null);
-
+  const [loading, setLoading] = useState(false);
+  const [product, setProduct] = useState<ProductType>({
+    name: "",
+    images: [],
+  });
+  const router = useRouter();
   const { id } = useLocalSearchParams();
   const isUpdating = !!id;
 
-  const resetFields = () => {
-    setName("");
-    setPrice("");
-  };
-
-  const validateInput = () => {
+  const onSubmit = async () => {
     setErrors("");
-    if (!name) {
-      setErrors("Name is required");
-      return false;
+    if (!product.name.trim() || product.images.length === 0) {
+      setErrors("Please fill all the fields!");
+      return;
     }
-    if (!price) {
-      setErrors("Price is required");
-      return false;
-    }
-    if (isNaN(parseFloat(price))) {
-      setErrors("Price must be a number");
-      return false;
-    }
-    return true;
-  };
 
-  const onSubmit = () => {
-    if (isUpdating) {
-      onUpdateCreate();
+    const data: ProductType = {
+      name: product.name,
+      images: product.images,
+      uid: user?.uid,
+    };
+
+    setLoading(true);
+    const res = await createProduct(data);
+    setLoading(false);
+    console.log("result: ", res);
+    if (res.success) {
+      router.back();
     } else {
-      onCreate();
+      Alert.alert("Product", res.msg);
     }
-  };
-
-  const onUpdateCreate = () => {
-    if (!validateInput()) {
-      return;
-    }
-    console.warn("Updating product ", name);
-    // Update in the database
-    resetFields();
-  };
-
-  const onCreate = () => {
-    if (!validateInput()) {
-      return;
-    }
-    console.warn("Creating product ", name);
-    // Save in the database
-    resetFields();
   };
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.5,
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const selectedUri = result.assets[0].uri;
+      const newImage = {
+        id: uuid.v4(),
+        uri: selectedUri,
+      };
+
+      setProduct((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), newImage],
+      }));
     }
   };
 
@@ -99,9 +96,19 @@ const CreateProductScreen = () => {
       <Stack.Screen
         options={{ title: isUpdating ? "Update Product" : "Create Product" }}
       />
-      <Image
-        source={{ uri: image || defaultPizzaImage }}
-        style={styles.image}
+      <FlatList
+        data={product.images}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        contentContainerStyle={{ gap: 10 }}
+        columnWrapperStyle={{
+          justifyContent: "center",
+          gap: 10,
+          marginBottom: 10,
+        }}
+        renderItem={({ item }) => (
+          <ProductImage uri={item.uri} width={100} height={100} />
+        )}
       />
       <Text onPress={pickImage} style={styles.textButton}>
         Select Image
@@ -109,21 +116,22 @@ const CreateProductScreen = () => {
 
       <Text style={styles.label}>Name</Text>
       <TextInput
-        value={name}
-        onChangeText={setName}
+        value={product.name}
+        onChangeText={(value) => setProduct({ ...product, name: value })}
         placeholder="Name"
         style={styles.input}
       />
-      <Text style={styles.label}>Price (RM)</Text>
-      <TextInput
-        value={price}
-        onChangeText={setPrice}
-        placeholder="9.99"
-        style={styles.input}
-        keyboardType="numeric"
-      />
+
       <Text style={{ color: "red" }}>{errors}</Text>
-      <Button onPress={onSubmit} text={isUpdating ? "Update" : "Create"} />
+      {product.images.length > 5 ? (
+        <Text style={{ color: "red" }}>Maximum 5 images allowed!</Text>
+      ) : (
+        <Button onPress={onSubmit}>
+          <Text style={styles.textButton}>
+            {isUpdating ? "Update" : "Create"}
+          </Text>
+        </Button>
+      )}
       {isUpdating && (
         <Text onPress={confirmDelete} style={styles.textButton}>
           Delete
@@ -137,7 +145,6 @@ export default CreateProductScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: "center",
     padding: 10,
   },
@@ -153,14 +160,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   image: {
-    width: "50%",
-    aspectRatio: 1,
     alignSelf: "center",
   },
   textButton: {
     alignSelf: "center",
     fontWeight: "bold",
-    color: colors.light.tint,
+    color: colors.black,
     marginVertical: 10,
   },
 });
