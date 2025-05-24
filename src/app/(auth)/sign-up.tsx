@@ -53,7 +53,7 @@ const SignUpScreen = () => {
     setLoading(true);
     const res = await register(email, password, username);
     setLoading(false);
-    console.log("register result: ", res);
+    console.log("register  ", res);
     if (!res.success) {
       Alert.alert("Sign up", res.msg);
     }

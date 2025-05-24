@@ -15,7 +15,7 @@ export const createProduct = async (
     // ✅ Upload each image in the array
     for (const image of productData.images || []) {
       const uploadResponse = await uploadFileToCloudinary(
-        image.uri,
+        { uri: image.uri },
         "products"
       );
 
@@ -25,7 +25,6 @@ export const createProduct = async (
           msg: uploadResponse.msg || `Failed to upload image`,
         };
       }
-
       uploadedImages.push(uploadResponse.data);
     }
 
@@ -39,9 +38,7 @@ export const createProduct = async (
       name: productData.name || "",
     };
 
-    const productRef = productData?.id
-      ? doc(firestore, "wallets", productData.id)
-      : doc(collection(firestore, "products"));
+    const productRef = doc(collection(firestore, "products"));
     await setDoc(productRef, productToSave);
 
     return { success: true, data: { ...productToSave, id: productRef.id } };
@@ -59,8 +56,11 @@ export const updateProduct = async (
     const uploadedImages: string[] = [];
 
     // ✅ Upload new images (if any)
-    for (const imageUri of updatedData.images || []) {
-      const uploadResponse = await uploadFileToCloudinary(imageUri, "products");
+    for (const image of updatedData.images || []) {
+      const uploadResponse = await uploadFileToCloudinary(
+        { uri: image.uri },
+        "products"
+      );
 
       if (!uploadResponse.success) {
         return {

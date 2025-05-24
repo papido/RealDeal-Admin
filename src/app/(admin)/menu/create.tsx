@@ -1,6 +1,6 @@
 import { createProduct } from "@/services/productService";
 import Button from "@/src/components/Button";
-import { ProductImage } from "@/src/components/ProductImage";
+import ImageUpload from "@/src/components/ImageUpload";
 import { colors } from "@/src/constants/theme";
 import { useAuth } from "@/src/providers/authProvider";
 import { ProductType } from "@/src/types";
@@ -45,7 +45,6 @@ const CreateProductScreen = () => {
     setLoading(true);
     const res = await createProduct(data);
     setLoading(false);
-    console.log("result: ", res);
     if (res.success) {
       router.back();
     } else {
@@ -107,7 +106,26 @@ const CreateProductScreen = () => {
           marginBottom: 10,
         }}
         renderItem={({ item }) => (
-          <ProductImage uri={item.uri} width={100} height={100} />
+          <View style={{ flex: 1 / 3 }}>
+            <ImageUpload
+              file={item}
+              onSelect={(file) =>
+                setProduct((prev) => ({
+                  ...prev,
+                  images: prev.images.map((img) =>
+                    img.id === item.id ? file : img
+                  ),
+                }))
+              }
+              onClear={() =>
+                setProduct((prev) => ({
+                  ...prev,
+                  images: prev.images.filter((img) => img.id !== item.id),
+                }))
+              }
+              placeholder="Upload Image"
+            />
+          </View>
         )}
       />
       <Text onPress={pickImage} style={styles.textButton}>
