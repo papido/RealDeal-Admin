@@ -1,5 +1,5 @@
 import { colors } from "@/src/constants/theme";
-import { useRouter } from "expo-router";
+import { Router } from "expo-router";
 import React from "react";
 import { Image, Pressable, StyleSheet, Text } from "react-native";
 import { ProductType } from "../types";
@@ -9,14 +9,13 @@ export const defaultPizzaImage =
 
 type ProductListItemProps = {
   product: ProductType;
+  router: Router;
 };
 
-const ProductListItem = ({ product }: ProductListItemProps) => {
-  const router = useRouter();
-
+const ProductListItem = ({ product, router }: ProductListItemProps) => {
   return (
     <Pressable
-      onPress={() => router.push(`/menu/${product.id}`)}
+      onPress={() => router.push(`/(admin)/menu/${product.id}`)}
       style={styles.container}
     >
       <Image
@@ -25,7 +24,9 @@ const ProductListItem = ({ product }: ProductListItemProps) => {
         resizeMode="contain"
       />
       <Text style={styles.title}>{product.name}</Text>
-      <Text style={styles.price}>RM{product.price}</Text>
+      <Text style={styles.price}>
+        RM{product.price1}-RM{product.price2}
+      </Text>
     </Pressable>
   );
 };
@@ -42,12 +43,12 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    aspectRatio: 1,
+    aspectRatio: 1.2,
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
-    marginVertical: 10,
+    fontWeight: "bold",
+    marginVertical: 3,
   },
 
   price: {

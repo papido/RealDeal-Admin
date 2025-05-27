@@ -1,6 +1,6 @@
 import { firestore } from "@/config/firebase";
 import { ProductType, ResponseType } from "@/src/types";
-import { collection, doc, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, setDoc } from "firebase/firestore";
 import uuid from "react-native-uuid";
 import { uploadFileToCloudinary } from "./imageService";
 export const defaultPizzaImage =
@@ -36,10 +36,22 @@ export const createProduct = async (
           ? uploadedImages.map((uri) => ({ id: uuid.v4(), uri }))
           : [{ id: uuid.v4(), uri: defaultPizzaImage }],
       name: productData.name || "",
+      price1: productData.price1 || 0,
+      price2: productData.price2 || 0,
+      category: productData.category || "",
+      desc: productData.desc || "",
+      speciality: productData.speciality || "",
+      createdAt: new Date(),
     };
 
-    const productRef = doc(collection(firestore, "products"));
-    await setDoc(productRef, productToSave);
+    const productRef = productData?.id
+      ? doc(firestore, "products", productData.id)
+      : doc(collection(firestore, "products"));
+
+    // 🔧 Add id to the data before saving
+    productToSave.id = productRef.id;
+
+    await setDoc(productRef, productToSave, { merge: true });
 
     return { success: true, data: { ...productToSave, id: productRef.id } };
   } catch (error: any) {
@@ -87,5 +99,18 @@ export const updateProduct = async (
   } catch (error: any) {
     console.log("error updating product: ", error);
     return { success: false, msg: error.message };
+  }
+};
+
+export const deleteProduct = async (
+  productId: string
+): Promise<ResponseType> => {
+  try {
+    const productRef = doc(firestore, "products", productId);
+    await deleteDoc(productRef);
+    return { success: true, msg: "Product deleted successfully" };
+  } catch (err: any) {
+    console.log("error deleting product: ", err);
+    return { success: false, msg: err.message };
   }
 };

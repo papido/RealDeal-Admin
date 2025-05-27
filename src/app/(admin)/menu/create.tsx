@@ -1,4 +1,9 @@
-import { createProduct } from "@/services/productService";
+import { firestore } from "@/config/firebase";
+import {
+  createProduct,
+  deleteProduct,
+  updateProduct,
+} from "@/services/productService";
 import Button from "@/src/components/Button";
 import ImageUpload from "@/src/components/ImageUpload";
 import { colors } from "@/src/constants/theme";
@@ -6,7 +11,8 @@ import { useAuth } from "@/src/providers/authProvider";
 import { ProductType } from "@/src/types";
 import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -24,10 +30,24 @@ const CreateProductScreen = () => {
   const [product, setProduct] = useState<ProductType>({
     name: "",
     images: [],
+    uid: user?.uid,
   });
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isUpdating = !!id;
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      const productDoc = await getDoc(doc(firestore, "products", id as string));
+      if (productDoc.exists()) {
+        setProduct({ id: productDoc.id, ...productDoc.data() } as ProductType);
+      }
+      setLoading(false);
+    };
+
+    fetchProduct();
+  }, [id]);
 
   const onSubmit = async () => {
     setErrors("");
@@ -35,18 +55,18 @@ const CreateProductScreen = () => {
       setErrors("Please fill all the fields!");
       return;
     }
-
-    const data: ProductType = {
-      name: product.name,
-      images: product.images,
-      uid: user?.uid,
-    };
-
     setLoading(true);
-    const res = await createProduct(data);
+
+    let res;
+    if (isUpdating) {
+      res = await updateProduct(product.id!, product);
+    } else {
+      res = await createProduct(product);
+    }
+
     setLoading(false);
     if (res.success) {
-      router.back();
+      router.push("/(admin)/menu");
     } else {
       Alert.alert("Product", res.msg);
     }
@@ -73,11 +93,19 @@ const CreateProductScreen = () => {
     }
   };
 
-  const onDelete = () => {
-    console.warn("DELETE!!!!!!");
+  const onDelete = async () => {
+    if (!product?.id) return;
+    setLoading(true);
+    const res = await deleteProduct(product?.id);
+    setLoading(false);
+    if (res.success) {
+      router.push("/(admin)/menu");
+    } else {
+      Alert.alert("Product", res.msg);
+    }
   };
 
-  const confirmDelete = () => {
+  const showDeleteAlert = () => {
     Alert.alert("Confirm", "Are you sure you want to delete this product", [
       {
         text: "Cancel",
@@ -144,14 +172,14 @@ const CreateProductScreen = () => {
       {product.images.length > 5 ? (
         <Text style={{ color: "red" }}>Maximum 5 images allowed!</Text>
       ) : (
-        <Button onPress={onSubmit}>
+        <Button onPress={onSubmit} loading={loading}>
           <Text style={styles.textButton}>
             {isUpdating ? "Update" : "Create"}
           </Text>
         </Button>
       )}
-      {isUpdating && (
-        <Text onPress={confirmDelete} style={styles.textButton}>
+      {isUpdating && !loading && (
+        <Text onPress={showDeleteAlert} style={styles.textButton}>
           Delete
         </Text>
       )}

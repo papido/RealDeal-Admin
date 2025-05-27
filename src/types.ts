@@ -6,9 +6,11 @@ export type ProductType = {
   images: ProductImageType[];
   name: string;
   desc?: string;
-  ingredients?: string;
-  price?: number;
+  speciality?: string;
+  price1?: number;
+  price2?: number;
   uid?: string;
+  createdAt?: Date;
 };
 
 export type ProductImageType = {
