@@ -1,5 +1,5 @@
 import { colors } from "@/src/constants/theme";
-import { Router } from "expo-router";
+import { Router, useSegments } from "expo-router";
 import React from "react";
 import { Image, Pressable, StyleSheet, Text } from "react-native";
 import { ProductType } from "../types";
@@ -13,11 +13,17 @@ type ProductListItemProps = {
 };
 
 const ProductListItem = ({ product, router }: ProductListItemProps) => {
+  const segments = useSegments();
+  const handleNavigate = () => {
+    if (segments[0] === "(user)" && segments[1] === "menu") {
+      router.push(`/(user)/menu/${product.id}`);
+    } else {
+      router.push(`/(admin)/menu/${product.id}`);
+    }
+  };
+
   return (
-    <Pressable
-      onPress={() => router.push(`/(admin)/menu/${product.id}`)}
-      style={styles.container}
-    >
+    <Pressable onPress={handleNavigate} style={styles.container}>
       <Image
         source={{ uri: product.images?.[0]?.uri || defaultPizzaImage }}
         style={styles.image}

@@ -1,7 +1,6 @@
 import { auth } from "@/config/firebase";
 import { colors } from "@/src/constants/theme";
-import { FontAwesome } from "@expo/vector-icons";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
+import { FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
 import { Link, Stack, useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
 import { Pressable } from "react-native";
@@ -18,7 +17,7 @@ export default function MenuStack() {
     <Stack
       screenOptions={{
         headerLeft: () => (
-          <Pressable onPress={handleLogout} style={{ paddingHorizontal: 10 }}>
+          <Pressable onPress={handleLogout} style={{ paddingRight: 140 }}>
             <SimpleLineIcons name="logout" size={24} color="black" />
           </Pressable>
         ),
@@ -36,7 +35,7 @@ export default function MenuStack() {
             </Pressable>
           </Link>
         ),
-        headerTitleAlign: "center",
+
         headerStyle: {
           backgroundColor: colors.primaryLight,
         },

@@ -30,7 +30,7 @@ export type ImageUploadProps = {
 export type PizzaSize = "S" | "M" | "L" | "XL";
 
 export type CartItem = {
-  id: string;
+  id?: string;
   product: ProductType;
   product_id: number;
   size: PizzaSize;
@@ -48,9 +48,9 @@ export type OrderStatus = "New" | "Cooking" | "Delivering" | "Delivered";
 
 export type Order = {
   id: number;
-  created_at: string;
+  createdAt: string;
   total: number;
-  user_id: string;
+  uid: string;
   status: OrderStatus;
 
   order_items?: OrderItem[];

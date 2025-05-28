@@ -1,10 +1,11 @@
+import { useFetchId } from "@/services/useFetchId";
+import Loading from "@/src/components/Loading";
 import { defaultPizzaImage } from "@/src/components/ProductListItem";
 import { useCart } from "@/src/providers/CartProvider";
 import { PizzaSize } from "@/src/types";
-import products from "@assets/data/products";
 import Button from "@components/Button";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 const sizes: PizzaSize[] = ["S", "M", "L", "XL"];
@@ -14,7 +15,14 @@ const ProductDetailsScreen = () => {
   const { addItem } = useCart();
   const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<PizzaSize>("M");
-  const product = products.find((p) => p.id.toString() === id);
+  const { product, loading, fetchProduct } = useFetchId();
+
+  useEffect(() => {
+    if (id) {
+      fetchProduct(id as string);
+    }
+  }, [id]);
+
   const addToCart = () => {
     if (!product) {
       return;
@@ -23,15 +31,16 @@ const ProductDetailsScreen = () => {
     router.push("/cart");
   };
 
+  if (loading) return <Loading />;
   if (!product) {
     return <Text>Product not found</Text>;
   }
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: product.name }} />
+      {product && <Stack.Screen options={{ title: product.name }} />}
       <Image
-        source={{ uri: product.image || defaultPizzaImage }}
+        source={{ uri: product.images[0].uri || defaultPizzaImage }}
         style={styles.image}
       />
 
@@ -60,7 +69,7 @@ const ProductDetailsScreen = () => {
         ))}
       </View>
 
-      <Text style={styles.price}>RM{product.price}</Text>
+      <Text style={styles.price}>RM{product.price1}</Text>
       <Button onPress={addToCart}>
         <Text>Add to cart</Text>
       </Button>
