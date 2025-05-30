@@ -1,4 +1,4 @@
-import { useFetchId } from "@/services/useFetchId";
+import { useFetchIdProducts } from "@/services/useFetchProduct";
 import Loading from "@/src/components/Loading";
 import { defaultPizzaImage } from "@/src/components/ProductListItem";
 import { colors } from "@/src/constants/theme";
@@ -9,7 +9,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 const ProductDetailsScreen = () => {
   const { id } = useLocalSearchParams();
-  const { product, loading, fetchProduct } = useFetchId();
+  const { product, loading, fetchProduct } = useFetchIdProducts();
 
   useEffect(() => {
     if (id) {
@@ -49,9 +49,7 @@ const ProductDetailsScreen = () => {
         style={styles.image}
       />
       <Text style={styles.title}>{product?.name}</Text>
-      <Text style={styles.price}>
-        RM{product.price1}-RM{product.price2}
-      </Text>
+      <Text style={styles.price}>{product.price}</Text>
     </View>
   );
 };

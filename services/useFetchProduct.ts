@@ -3,7 +3,7 @@ import { ProductType } from "@/src/types";
 import { doc, getDoc } from "firebase/firestore";
 import { useState } from "react";
 
-export const useFetchId = () => {
+export const useFetchIdProducts = () => {
   const [product, setProduct] = useState<ProductType | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,7 +13,7 @@ export const useFetchId = () => {
     if (productDoc.exists()) {
       setProduct({ id: productDoc.id, ...productDoc.data() } as ProductType);
     } else {
-      setProduct(null);
+      console.log("No such document!(product)");
     }
     setLoading(false);
   };

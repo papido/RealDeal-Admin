@@ -15,27 +15,28 @@ const CartListItem = ({ cartItem }: CartListItemProps) => {
   return (
     <View style={styles.container}>
       <Image
-        source={{ uri: cartItem.product.image || defaultPizzaImage }}
+        source={{ uri: cartItem.product.images[0].uri || defaultPizzaImage }}
         style={styles.image}
         resizeMode="contain"
       />
       <View style={{ flex: 1 }}>
-        <Text style={styles.title}>{cartItem.product.name}</Text>
+        <Text style={styles.title}>{cartItem.productItem.name}</Text>
         <View style={styles.subtitleContainer}>
-          <Text style={styles.price}>${cartItem.product.price.toFixed(2)}</Text>
-          <Text>Size: {cartItem.size}</Text>
+          <Text style={styles.price}>
+            RM{cartItem.productItem.price.toFixed(2)}
+          </Text>
         </View>
       </View>
       <View style={styles.quantitySelector}>
         <FontAwesome
-          onPress={() => updateQuantity(cartItem.id, -1)}
+          onPress={() => updateQuantity(cartItem.id!, -1)}
           name="minus"
           color="gray"
           style={{ padding: 5 }}
         />
         <Text style={styles.quantity}>{cartItem.quantity}</Text>
         <FontAwesome
-          onPress={() => updateQuantity(cartItem.id, 1)}
+          onPress={() => updateQuantity(cartItem.id!, 1)}
           name="plus"
           color="gray"
           style={{ padding: 5 }}
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   price: {
-    color: colors.primary,
+    color: colors.light.text,
     fontWeight: "bold",
   },
 });

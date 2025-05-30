@@ -1,0 +1,39 @@
+import { firestore } from "@/config/firebase";
+import { OrderType, ResponseType } from "@/src/types";
+import dayjs from "dayjs";
+import { collection, doc, setDoc } from "firebase/firestore";
+
+export const createOrder = async (
+  orderData: Partial<OrderType>
+): Promise<ResponseType> => {
+  try {
+    const now = dayjs();
+
+    // ✅ Prepare the order object
+    const orderToSave: OrderType = {
+      ...orderData,
+      id: orderData.id || "",
+      createdAt: orderData.createdAt || now.toISOString(),
+      total: orderData.total || 0,
+      uid: orderData.uid || "",
+      status: orderData.status || "New",
+      orderItems: orderData.orderItems || [],
+    };
+
+    const orderRef = orderData?.id
+      ? doc(firestore, "orders", orderData.id)
+      : doc(collection(firestore, "orders"));
+
+    // 🔧 Add id to the data before saving
+    orderToSave.id = orderRef.id;
+
+    await setDoc(orderRef, orderToSave, { merge: true });
+
+    return { success: true, data: { ...orderToSave, id: orderRef.id } };
+  } catch (error: any) {
+    console.log("error creating product: ", error);
+    return { success: false, msg: error.message };
+  }
+};
+
+// export const updateOrder = async (): Promise<ResponseType> => {};

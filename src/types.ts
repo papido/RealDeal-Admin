@@ -7,10 +7,14 @@ export type ProductType = {
   name: string;
   desc?: string;
   speciality?: string;
-  price1?: number;
-  price2?: number;
+  price?: string;
+  items?: ProductItem[];
   uid?: string;
-  createdAt?: Date;
+};
+
+export type ProductItem = {
+  name: string;
+  price: number;
 };
 
 export type ProductImageType = {
@@ -32,8 +36,7 @@ export type PizzaSize = "S" | "M" | "L" | "XL";
 export type CartItem = {
   id?: string;
   product: ProductType;
-  product_id: number;
-  size: PizzaSize;
+  productItem: ProductItem;
   quantity: number;
 };
 
@@ -46,22 +49,20 @@ export const OrderStatusList: OrderStatus[] = [
 
 export type OrderStatus = "New" | "Cooking" | "Delivering" | "Delivered";
 
-export type Order = {
-  id: number;
-  createdAt: string;
-  total: number;
-  uid: string;
-  status: OrderStatus;
+export type OrderType = {
+  id?: string;
+  createdAt?: string;
+  total?: number;
+  uid?: string;
+  status?: OrderStatus;
 
-  order_items?: OrderItem[];
+  orderItems?: OrderItem[];
 };
 
 export type OrderItem = {
-  id: number;
-  product_id: number;
-  products: ProductType;
-  order_id: number;
-  size: PizzaSize;
+  id?: string;
+  productName: ProductType["name"];
+  productItem: ProductItem;
   quantity: number;
 };
 

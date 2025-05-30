@@ -30,9 +30,7 @@ const ProductListItem = ({ product, router }: ProductListItemProps) => {
         resizeMode="contain"
       />
       <Text style={styles.title}>{product.name}</Text>
-      <Text style={styles.price}>
-        RM{product.price1}-RM{product.price2}
-      </Text>
+      <Text style={styles.price}>{product.price}</Text>
     </Pressable>
   );
 };

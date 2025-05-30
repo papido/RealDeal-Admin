@@ -1,21 +1,19 @@
-import { useFetchId } from "@/services/useFetchId";
+import { useFetchIdProducts } from "@/services/useFetchProduct";
 import Loading from "@/src/components/Loading";
 import { defaultPizzaImage } from "@/src/components/ProductListItem";
 import { useCart } from "@/src/providers/CartProvider";
-import { PizzaSize } from "@/src/types";
+import { ProductItem } from "@/src/types";
 import Button from "@components/Button";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-const sizes: PizzaSize[] = ["S", "M", "L", "XL"];
-
 const ProductDetailsScreen = () => {
   const { id } = useLocalSearchParams();
   const { addItem } = useCart();
   const router = useRouter();
-  const [selectedSize, setSelectedSize] = useState<PizzaSize>("M");
-  const { product, loading, fetchProduct } = useFetchId();
+  const { product, loading, fetchProduct } = useFetchIdProducts();
+  const [selectedItem, setSelectedItem] = useState<ProductItem>();
 
   useEffect(() => {
     if (id) {
@@ -24,10 +22,10 @@ const ProductDetailsScreen = () => {
   }, [id]);
 
   const addToCart = () => {
-    if (!product) {
+    if (!product || !selectedItem) {
       return;
     }
-    addItem(product, selectedSize);
+    addItem(product, selectedItem);
     router.push("/cart");
   };
 
@@ -44,33 +42,41 @@ const ProductDetailsScreen = () => {
         style={styles.image}
       />
 
-      <Text>Select size</Text>
-      <View style={styles.sizes}>
-        {sizes.map((size) => (
+      <Text style={styles.itemsText}>Select an item:</Text>
+      <View style={styles.items}>
+        {product.items?.map((mapItem) => (
           <Pressable
-            onPress={() => setSelectedSize(size)}
+            onPress={() => setSelectedItem(mapItem)}
             style={[
-              styles.size,
+              styles.item,
               {
-                backgroundColor: selectedSize === size ? "gainsboro" : "white",
+                backgroundColor:
+                  selectedItem === mapItem ? "gainsboro" : "white",
               },
             ]}
-            key={size}
+            key={mapItem.name}
           >
             <Text
               style={[
-                styles.sizeText,
-                { color: selectedSize === size ? "black" : "gray" },
+                styles.itemsText,
+                { color: selectedItem === mapItem ? "black" : "gray" },
               ]}
             >
-              {size}
+              {mapItem.name}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.price}>RM{product.price1}</Text>
-      <Button onPress={addToCart}>
+      {selectedItem && (
+        <Text style={styles.price}>RM{selectedItem.price.toFixed(2)}</Text>
+      )}
+
+      {!selectedItem && product.price && (
+        <Text style={styles.price}>{product.price}</Text>
+      )}
+
+      <Button onPress={addToCart} loading={loading}>
         <Text>Add to cart</Text>
       </Button>
     </View>
@@ -95,20 +101,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: "auto",
   },
-  sizes: {
+  items: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginVertical: 10,
   },
-  size: {
+  item: {
     backgroundColor: "gainsboro",
-    width: 50,
-    aspectRatio: 1,
-    borderRadius: 25,
+    width: 120,
+    aspectRatio: 1.5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  sizeText: {
+  itemsText: {
     fontSize: 20,
     fontWeight: "500",
   },

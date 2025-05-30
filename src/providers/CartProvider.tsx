@@ -1,39 +1,59 @@
+import { createOrder } from "@/services/orderService";
+import { useFetchIdOrders } from "@/services/useFetchOrder";
+import dayjs from "dayjs";
 import { randomUUID } from "expo-crypto";
+import { router } from "expo-router";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
-import { CartItem, Product } from "../types";
+import { Alert } from "react-native";
+import { CartItem, OrderType, ProductType } from "../types";
+import { useAuth } from "./authProvider";
 
 type CartType = {
   items: CartItem[];
-  addItem: (product: Product, size: CartItem["size"]) => void;
+  order: OrderType;
+  addItem: (product: ProductType, item: CartItem["productItem"]) => void;
   updateQuantity: (itemId: string, amount: -1 | 1) => void;
   total: number;
+  checkout: () => void;
+  loading: boolean;
 };
 
 export const CartContext = createContext<CartType>({
   items: [],
+  order: {},
   addItem: () => {},
   updateQuantity: () => {},
   total: 0,
+  checkout: () => {},
+  loading: false,
 });
 
 const CartProvider = ({ children }: PropsWithChildren) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [order, setOrder] = useState<OrderType>({ id: "" });
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { fetchOrder } = useFetchIdOrders();
 
-  const addItem = (product: Product, size: CartItem["size"]) => {
+  const addItem = (
+    product: ProductType,
+    productItem: CartItem["productItem"]
+  ) => {
     const existingItem = items.find(
-      (item) => item.product_id === product.id && item.size === size
+      (item) =>
+        item.product.id === product.id &&
+        item.productItem.name === productItem.name
     );
 
     if (existingItem) {
-      updateQuantity(existingItem.id, 1);
+      updateQuantity(existingItem.id!, 1);
       return;
     }
 
     const newCartItem: CartItem = {
       id: randomUUID(),
       product,
-      product_id: product.id,
-      size,
+      productItem,
       quantity: 1,
     };
 
@@ -53,12 +73,54 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   };
 
   const total = items.reduce(
-    (sum, item) => (sum += item.product.price * item.quantity),
+    (sum, item) => (sum += item.productItem.price * item.quantity),
     0
   );
 
+  const checkout = async () => {
+    const now = dayjs();
+    const newOrder: OrderType = {
+      id: randomUUID(),
+      createdAt: now.toISOString(),
+      total: total,
+      uid: user?.uid!,
+      status: "New",
+      orderItems: items.map((item) => ({
+        id: item.id,
+        productName: item.product.name,
+        productItem: {
+          name: item.productItem.name,
+          price: item.productItem.price,
+        },
+        quantity: item.quantity,
+      })),
+    };
+
+    setLoading(true);
+    let res = await createOrder(newOrder);
+    if (res.success) {
+      console.log("Order successfully created", res);
+      setOrder(res.data);
+      setItems([]);
+      router.push("/(user)/menu");
+    } else {
+      Alert.alert("Order", res.msg);
+    }
+    setLoading(false);
+  };
+
   return (
-    <CartContext.Provider value={{ items, addItem, updateQuantity, total }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        updateQuantity,
+        total,
+        checkout,
+        order,
+        loading,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

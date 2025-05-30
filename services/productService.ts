@@ -36,12 +36,24 @@ export const createProduct = async (
           ? uploadedImages.map((uri) => ({ id: uuid.v4(), uri }))
           : [{ id: uuid.v4(), uri: defaultPizzaImage }],
       name: productData.name || "",
-      price1: productData.price1 || 0,
-      price2: productData.price2 || 0,
+      price: productData.price || "RM7-RM18",
       category: productData.category || "",
       desc: productData.desc || "",
       speciality: productData.speciality || "",
-      createdAt: new Date(),
+      items: productData.items || [
+        {
+          name: "Ultimate Pepperoni",
+          price: 6.4,
+        },
+        {
+          name: "ExtravaganZZa",
+          price: 10.2,
+        },
+        {
+          name: "MeatZZa",
+          price: 15.3,
+        },
+      ],
     };
 
     const productRef = productData?.id
