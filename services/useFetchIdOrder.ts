@@ -13,7 +13,7 @@ export const useFetchIdOrders = () => {
     if (orderDoc.exists()) {
       setOrder({ id: orderDoc.id, ...orderDoc.data() } as OrderType);
     } else {
-      console.log("No such document!(product)");
+      console.log("No such document!(order)");
     }
     setLoading(false);
   };

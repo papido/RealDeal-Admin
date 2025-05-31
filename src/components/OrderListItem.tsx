@@ -1,25 +1,23 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Link, useSegments } from "expo-router";
+import { Link } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Order } from "../types";
+import { OrderType } from "../types";
 
 dayjs.extend(relativeTime);
 
 type OrderListItemProps = {
-  order: Order;
+  order: OrderType;
 };
 
 const OrderListItem = ({ order }: OrderListItemProps) => {
-  const segments = useSegments();
-
   return (
-    <Link href={`/${segments[0]}/orders/${order.id}`} asChild>
+    <Link href={`/orders/${order.id}`} asChild>
       <Pressable style={styles.container}>
         <View>
           <Text style={styles.title}>Order #{order.id}</Text>
-          <Text style={styles.time}>{dayjs(order.created_at).fromNow()}</Text>
+          <Text style={styles.time}>{dayjs(order.createdAt).fromNow()}</Text>
         </View>
 
         <Text style={styles.status}>{order.status}</Text>

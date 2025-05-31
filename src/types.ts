@@ -62,6 +62,7 @@ export type OrderType = {
 export type OrderItem = {
   id?: string;
   productName: ProductType["name"];
+  productImage: ProductImageType["uri"];
   productItem: ProductItem;
   quantity: number;
 };

@@ -1,4 +1,4 @@
-import { useFetchIdProducts } from "@/services/useFetchProduct";
+import { useFetchIdProducts } from "@/services/useFetchIdProduct";
 import Loading from "@/src/components/Loading";
 import { defaultPizzaImage } from "@/src/components/ProductListItem";
 import { colors } from "@/src/constants/theme";

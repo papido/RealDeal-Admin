@@ -1,5 +1,4 @@
 import { createOrder } from "@/services/orderService";
-import { useFetchIdOrders } from "@/services/useFetchOrder";
 import dayjs from "dayjs";
 import { randomUUID } from "expo-crypto";
 import { router } from "expo-router";
@@ -33,7 +32,6 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   const [order, setOrder] = useState<OrderType>({ id: "" });
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const { fetchOrder } = useFetchIdOrders();
 
   const addItem = (
     product: ProductType,
@@ -88,6 +86,7 @@ const CartProvider = ({ children }: PropsWithChildren) => {
       orderItems: items.map((item) => ({
         id: item.id,
         productName: item.product.name,
+        productImage: item.product.images[0].uri,
         productItem: {
           name: item.productItem.name,
           price: item.productItem.price,
