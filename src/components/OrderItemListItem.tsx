@@ -16,12 +16,13 @@ const OrderItemListItem = ({ item }: OrderItemListItemProps) => {
         style={styles.image}
         resizeMode="contain"
       />
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, marginLeft: 10 }}>
         <Text style={styles.title}>{item.productName}</Text>
         <Text style={styles.title}>{item.productItem.name}</Text>
         <View style={styles.subtitleContainer}>
-          <Text style={styles.price}>${item.productItem.price.toFixed(2)}</Text>
-          <Text>Quantity: {item.quantity}</Text>
+          <Text style={styles.price}>
+            RM{item.productItem.price.toFixed(2)}
+          </Text>
         </View>
       </View>
       <View style={styles.quantitySelector}>
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignSelf: "center",
     marginRight: 10,
+    marginLeft: 10,
   },
   title: {
     fontWeight: "500",
@@ -60,6 +62,7 @@ const styles = StyleSheet.create({
     gap: 10,
     alignItems: "center",
     marginVertical: 10,
+    marginRight: 20,
   },
   quantity: {
     fontWeight: "500",
