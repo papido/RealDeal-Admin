@@ -94,7 +94,6 @@ const CartProvider = ({ children }: PropsWithChildren) => {
         quantity: item.quantity,
       })),
     };
-
     setLoading(true);
     let res = await createOrder(newOrder);
     if (res.success) {

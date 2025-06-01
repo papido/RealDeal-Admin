@@ -4,7 +4,7 @@ import OrderItemListItem from "@/src/components/OrderItemListItem";
 import OrderListItem from "@/src/components/OrderListItem";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 
 const OrdersDetailsScreen = () => {
   const { order, loading, fetchOrder } = useFetchIdOrders();
@@ -36,5 +36,3 @@ const OrdersDetailsScreen = () => {
 };
 
 export default OrdersDetailsScreen;
-
-const styles = StyleSheet.create({});
