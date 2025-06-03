@@ -1,7 +1,6 @@
 import { useFetchIdOrders } from "@/services/useFetchIdOrder";
 import Loading from "@/src/components/Loading";
 import OrderItemListItem from "@/src/components/OrderItemListItem";
-import OrderListItem from "@/src/components/OrderListItem";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
 import { FlatList, Text, View } from "react-native";
@@ -29,7 +28,6 @@ const OrdersDetailsScreen = () => {
         data={order.orderItems}
         renderItem={({ item }) => <OrderItemListItem item={item} />}
         contentContainerStyle={{ gap: 10 }}
-        ListHeaderComponent={() => <OrderListItem order={order} />}
       />
     </View>
   );
