@@ -49,7 +49,7 @@ const CartProvider = ({ children }: PropsWithChildren) => {
     }
 
     const newCartItem: CartItem = {
-      id: randomUUID(),
+      id: randomUUID().split("-")[0],
       product,
       productItem,
       quantity: 1,
@@ -78,7 +78,7 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   const checkout = async () => {
     const now = dayjs();
     const newOrder: OrderType = {
-      id: randomUUID(),
+      id: randomUUID().split("-")[0],
       createdAt: now.toISOString(),
       total: total,
       uid: user?.uid!,
