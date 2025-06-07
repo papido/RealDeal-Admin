@@ -4,7 +4,6 @@ import * as Font from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
 import { AuthProvider } from "../providers/authProvider";
 
 const RootLayout = () => {
@@ -34,5 +33,3 @@ const RootLayout = () => {
 };
 
 export default RootLayout;
-
-const styles = StyleSheet.create({});

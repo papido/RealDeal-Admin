@@ -1,9 +1,7 @@
-import { createOrder } from "@/services/orderService";
 import dayjs from "dayjs";
 import { randomUUID } from "expo-crypto";
 import { router } from "expo-router";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
-import { Alert } from "react-native";
 import { CartItem, OrderType, ProductType } from "../types";
 import { useAuth } from "./authProvider";
 
@@ -94,17 +92,9 @@ const CartProvider = ({ children }: PropsWithChildren) => {
         quantity: item.quantity,
       })),
     };
-    setLoading(true);
-    let res = await createOrder(newOrder);
-    if (res.success) {
-      console.log("Order successfully created", res);
-      setOrder(res.data);
-      setItems([]);
-      router.push("/(user)/menu");
-    } else {
-      Alert.alert("Order", res.msg);
-    }
-    setLoading(false);
+    setOrder(newOrder);
+    setItems([]);
+    router.push("/(user)/orders/qrPayment");
   };
 
   return (
