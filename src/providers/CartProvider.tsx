@@ -94,7 +94,7 @@ const CartProvider = ({ children }: PropsWithChildren) => {
     };
     setOrder(newOrder);
     setItems([]);
-    router.replace("/(user)/orders/qrPayment");
+    router.push("/qrPayment");
   };
 
   return (

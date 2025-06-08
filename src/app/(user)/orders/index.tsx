@@ -12,8 +12,8 @@ const OrdersScreen = () => {
     where("uid", "==", user?.uid),
     orderBy("createdAt", "desc"),
   ]);
-  if (loading) return <Loading />;
 
+  if (loading) return <Loading />;
   return (
     <View style={styles.container}>
       {orders.length > 0 ? (

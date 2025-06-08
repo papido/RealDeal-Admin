@@ -1,5 +1,4 @@
 import useFetchData from "@/services/useFetchData";
-import Loading from "@/src/components/Loading";
 import ProductListItem from "@/src/components/ProductListItem";
 import { useAuth } from "@/src/providers/authProvider";
 import { ProductType } from "@/src/types";
@@ -14,7 +13,6 @@ const MenuScreen = () => {
     where("uid", "==", user?.uid),
     orderBy("createdAt", "desc"),
   ]);
-  if (loading) return <Loading />;
 
   return (
     <>

@@ -1,7 +1,6 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { router, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import React from "react";
-import { StyleSheet } from "react-native";
 
 const _layout = () => {
   return (
@@ -25,12 +24,6 @@ const _layout = () => {
             <FontAwesome name="th-list" size={size} color={color} />
           ),
         }}
-        listeners={() => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            router.replace("/(user)/orders"); // Navigates to (user)/orders/index.tsx
-          },
-        })}
       />
       <Tabs.Screen
         name="profile"
@@ -46,5 +39,3 @@ const _layout = () => {
 };
 
 export default _layout;
-
-const styles = StyleSheet.create({});
