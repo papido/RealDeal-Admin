@@ -12,14 +12,23 @@ const CartScreen = () => {
         data={items}
         renderItem={({ item }) => <CartListItem cartItem={item} />}
         contentContainerStyle={{ gap: 10 }}
+        ListEmptyComponent={
+          <Text style={{ textAlign: "center", marginTop: 40 }}>
+            Your cart is empty.
+          </Text>
+        }
       />
 
-      <Text style={{ marginTop: 20, fontSize: 20, fontWeight: "500" }}>
-        Total: RM{total.toFixed(2)}
-      </Text>
-      <Button onPress={checkout} loading={loading}>
-        <Text>Checkout</Text>
-      </Button>
+      {items.length > 0 && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={{ fontSize: 20, fontWeight: "500" }}>
+            Total: RM{total.toFixed(2)}
+          </Text>
+          <Button onPress={checkout} loading={loading}>
+            <Text>Checkout</Text>
+          </Button>
+        </View>
+      )}
     </View>
   );
 };
