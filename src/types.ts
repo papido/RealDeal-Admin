@@ -5,9 +5,10 @@ export type ProductType = {
   category?: string;
   images: ProductImageType[];
   name: string;
-  desc?: string;
+  description?: string;
   speciality?: string;
   price?: string;
+  createdAt?: Date;
   items?: ProductItem[];
   uid?: string;
 };

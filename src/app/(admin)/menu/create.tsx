@@ -39,6 +39,7 @@ const CreateProductScreen = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) return;
+      setLoading(true);
       const productDoc = await getDoc(doc(firestore, "products", id as string));
       if (productDoc.exists()) {
         setProduct({ id: productDoc.id, ...productDoc.data() } as ProductType);
@@ -66,7 +67,10 @@ const CreateProductScreen = () => {
 
     setLoading(false);
     if (res.success) {
-      router.push("/(admin)/menu");
+      if (!isUpdating) {
+        setProduct({ name: "", images: [], uid: user?.uid });
+      }
+      router.replace("/(admin)/menu");
     } else {
       Alert.alert("Product", res.msg);
     }
@@ -99,7 +103,8 @@ const CreateProductScreen = () => {
     const res = await deleteProduct(product?.id);
     setLoading(false);
     if (res.success) {
-      router.push("/(admin)/menu");
+      setProduct({ name: "", images: [], uid: user?.uid });
+      router.replace("/(admin)/menu");
     } else {
       Alert.alert("Product", res.msg);
     }
@@ -172,7 +177,7 @@ const CreateProductScreen = () => {
       {product.images.length > 5 ? (
         <Text style={{ color: "red" }}>Maximum 5 images allowed!</Text>
       ) : (
-        <Button onPress={onSubmit} loading={loading}>
+        <Button onPress={onSubmit} loading={loading} disabled={loading}>
           <Text style={styles.textButton}>
             {isUpdating ? "Update" : "Create"}
           </Text>

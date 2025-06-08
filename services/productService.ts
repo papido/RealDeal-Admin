@@ -38,8 +38,9 @@ export const createProduct = async (
       name: productData.name || "",
       price: productData.price || "RM7-RM18",
       category: productData.category || "",
-      desc: productData.desc || "",
+      description: productData.description || "",
       speciality: productData.speciality || "",
+      createdAt: productData.createdAt || new Date(),
       items: productData.items || [
         {
           name: "Ultimate Pepperoni",
