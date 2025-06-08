@@ -26,7 +26,7 @@ const ProductDetailsScreen = () => {
       return;
     }
     addItem(product, selectedItem);
-    router.push("/cart");
+    // router.replace("/cart");
   };
 
   if (loading) return <Loading />;

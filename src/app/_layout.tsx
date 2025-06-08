@@ -26,6 +26,15 @@ const RootLayout = () => {
             name="cart"
             options={{ title: "Cart", presentation: "modal" }}
           />
+          <Stack.Screen
+            name="qrPayment"
+            options={{
+              title: "Payment",
+              presentation: "modal",
+              headerLeft: () => null,
+              headerBackVisible: false,
+            }}
+          />
         </Stack>
       </CartProvider>
     </AuthProvider>
