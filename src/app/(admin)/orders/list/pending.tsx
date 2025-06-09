@@ -4,29 +4,27 @@ import OrderListItem from "@/src/components/OrderListItem";
 import { useAuth } from "@/src/providers/authProvider";
 import { OrderType } from "@/src/types";
 import { orderBy, where } from "firebase/firestore";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
-const ActiveScreen = () => {
+const PendingScreen = () => {
   const { user } = useAuth();
   const { data: orders, loading } = useFetchData<OrderType>("orders", [
     where("uid", "==", user?.uid),
     orderBy("createdAt", "desc"),
   ]);
 
-  const activeOrders = useMemo(() => {
-    return orders.filter(
-      (order) => order.status !== "Delivered" && order.status !== "Pending"
-    );
+  const pendingOrders = useMemo(() => {
+    return orders.filter((order) => order.status === "Pending");
   }, [orders]);
 
   if (loading) return <Loading />;
 
   return (
     <View style={styles.container}>
-      {activeOrders.length > 0 ? (
+      {pendingOrders.length > 0 ? (
         <FlatList
-          data={activeOrders}
+          data={pendingOrders}
           renderItem={({ item }) => <OrderListItem order={item} />}
           contentContainerStyle={{ gap: 10, padding: 10 }}
         />
@@ -41,7 +39,7 @@ const ActiveScreen = () => {
   );
 };
 
-export default ActiveScreen;
+export default PendingScreen;
 
 const styles = StyleSheet.create({
   container: {

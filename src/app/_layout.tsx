@@ -29,7 +29,7 @@ const RootLayout = () => {
           <Stack.Screen
             name="qrPayment"
             options={{
-              title: "Payment",
+              title: "Order Summary & Payment",
               presentation: "modal",
               headerLeft: () => null,
               headerBackVisible: false,

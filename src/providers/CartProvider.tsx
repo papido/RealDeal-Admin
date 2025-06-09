@@ -1,8 +1,17 @@
+import { createOrder } from "@/services/orderService";
 import dayjs from "dayjs";
 import { randomUUID } from "expo-crypto";
 import { router } from "expo-router";
+import {
+  addDoc,
+  collection,
+  getFirestore,
+  Timestamp,
+} from "firebase/firestore";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
-import { CartItem, OrderType, ProductType } from "../types";
+import { Alert } from "react-native";
+import { CartItem, OrderType, PaymentType, ProductType } from "../types";
 import { useAuth } from "./authProvider";
 
 type CartType = {
@@ -11,8 +20,10 @@ type CartType = {
   addItem: (product: ProductType, item: CartItem["productItem"]) => void;
   updateQuantity: (itemId: string, amount: -1 | 1) => void;
   total: number;
-  checkout: () => void;
+  checkout: (deliveryDate: Date) => void;
   loading: boolean;
+  submitPayment: (image: string) => void;
+  payment: PaymentType | null;
 };
 
 export const CartContext = createContext<CartType>({
@@ -22,7 +33,9 @@ export const CartContext = createContext<CartType>({
   updateQuantity: () => {},
   total: 0,
   checkout: () => {},
+  submitPayment: () => {},
   loading: false,
+  payment: null,
 });
 
 const CartProvider = ({ children }: PropsWithChildren) => {
@@ -30,6 +43,9 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   const [order, setOrder] = useState<OrderType>({ id: "" });
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [payment, setPayment] = useState<PaymentType | null>(null);
+  const storage = getStorage();
+  const db = getFirestore();
 
   const addItem = (
     product: ProductType,
@@ -73,14 +89,15 @@ const CartProvider = ({ children }: PropsWithChildren) => {
     0
   );
 
-  const checkout = async () => {
+  const checkout = async (deliveryDate: Date) => {
     const now = dayjs();
     const newOrder: OrderType = {
       id: randomUUID().split("-")[0],
       createdAt: now.toISOString(),
       total: total,
       uid: user?.uid!,
-      status: "New",
+      status: "Pending",
+      deliveryDateTime: dayjs(deliveryDate).format("dddd, MMM D YYYY • h:mm A"),
       orderItems: items.map((item) => ({
         id: item.id,
         productName: item.product.name,
@@ -98,6 +115,36 @@ const CartProvider = ({ children }: PropsWithChildren) => {
     router.replace("/qrPayment");
   };
 
+  const submitPayment = async (image: string) => {
+    setLoading(true);
+
+    let res = await createOrder(order);
+    if (res.success) {
+      console.log("Order successfully created", res);
+    } else {
+      Alert.alert("Order", res.msg);
+    }
+
+    const response = await fetch(image);
+    const blob = await response.blob();
+    const filename = `payment_proofs/${order.uid}_${Date.now()}.jpg`;
+    const storageRef = ref(storage, filename);
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+
+    const paymentData: PaymentType = {
+      imageUrl: downloadURL,
+      timestamp: Timestamp.now(),
+      uid: order.uid,
+      amount: order.total,
+      id: order.id,
+    };
+    await addDoc(collection(db, "payment_uploads"), paymentData);
+    setPayment(paymentData);
+    setLoading(false);
+    alert("Payment uploaded. Waiting for approval.");
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -108,6 +155,8 @@ const CartProvider = ({ children }: PropsWithChildren) => {
         checkout,
         order,
         loading,
+        submitPayment,
+        payment,
       }}
     >
       {children}

@@ -1,21 +1,32 @@
 import { updateOrder } from "@/services/orderService";
 import { useFetchIdOrders } from "@/services/useFetchIdOrder";
+import { getPaymentByOrderId } from "@/services/useFetchIdPayment";
 import OrderItemListItem from "@/src/components/OrderItemListItem";
 import { colors } from "@/src/constants/theme";
-import { OrderStatusList, OrderType } from "@/src/types";
+import { OrderStatusList, OrderType, PaymentType } from "@/src/types";
+import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, FlatList, Pressable, Text, View } from "react-native";
 
+export const defaultPizzaImage =
+  "https://notjustdev-dummy.s3.us-east-2.amazonaws.com/food/default.png";
+
 const OrdersDetailsScreen = () => {
   const { id } = useLocalSearchParams();
-  const { order, fetchOrder } = useFetchIdOrders();
+  const { order, fetchOrder, loading } = useFetchIdOrders();
   const [currentOrder, setCurrentOrder] = useState<OrderType | null>(null);
+  const [paymentData, setPaymentData] = useState<PaymentType | null>(null);
 
   useEffect(() => {
-    if (id) {
-      fetchOrder(id as string);
-    }
+    const loadPayment = async () => {
+      if (id) {
+        fetchOrder(id as string);
+        const payment = await getPaymentByOrderId(id as string);
+        setPaymentData(payment);
+      }
+    };
+    loadPayment();
   }, [id]);
 
   useEffect(() => {
@@ -93,6 +104,26 @@ const OrdersDetailsScreen = () => {
                 </Pressable>
               ))}
             </View>
+            {paymentData?.imageUrl ? (
+              <Image
+                source={{ uri: paymentData.imageUrl }}
+                style={{ width: "100%", aspectRatio: 1.2, borderRadius: 10 }}
+                contentFit="contain"
+              />
+            ) : (
+              <>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    marginTop: 30,
+                    fontSize: 20,
+                    fontWeight: "bold",
+                  }}
+                >
+                  No payment image available.
+                </Text>
+              </>
+            )}
           </>
         )}
       />

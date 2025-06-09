@@ -1,3 +1,4 @@
+import { Timestamp } from "firebase/firestore";
 import { ViewStyle } from "react-native";
 
 export type ProductType = {
@@ -42,13 +43,19 @@ export type CartItem = {
 };
 
 export const OrderStatusList: OrderStatus[] = [
-  "New",
+  "Pending",
+  "Paid",
   "Cooking",
   "Delivering",
   "Delivered",
 ];
 
-export type OrderStatus = "New" | "Cooking" | "Delivering" | "Delivered";
+export type OrderStatus =
+  | "Pending"
+  | "Paid"
+  | "Cooking"
+  | "Delivering"
+  | "Delivered";
 
 export type OrderType = {
   id?: string;
@@ -56,6 +63,7 @@ export type OrderType = {
   total?: number;
   uid?: string;
   status?: OrderStatus;
+  deliveryDateTime?: string;
 
   orderItems?: OrderItem[];
 };
@@ -99,4 +107,12 @@ export type AuthContextType = {
     name: string
   ) => Promise<{ success: boolean; msg?: string }>;
   updateUserData: (userId: string) => Promise<void>;
+};
+
+export type PaymentType = {
+  imageUrl?: string;
+  timestamp?: Timestamp;
+  uid?: string;
+  amount?: number;
+  id?: string;
 };

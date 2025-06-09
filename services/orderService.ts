@@ -16,7 +16,7 @@ export const createOrder = async (
       createdAt: orderData.createdAt || now.toISOString(),
       total: orderData.total || 0,
       uid: orderData.uid || "",
-      status: orderData.status || "New",
+      status: orderData.status || "Pending",
       orderItems: orderData.orderItems || [],
     };
 
@@ -49,7 +49,7 @@ export const updateOrder = async (
       createdAt: orderData.createdAt || now.toISOString(),
       total: orderData.total || 0,
       uid: orderData.uid || "",
-      status: orderData.status || "New",
+      status: orderData.status || "Pending",
       orderItems: orderData.orderItems || [],
     };
 
