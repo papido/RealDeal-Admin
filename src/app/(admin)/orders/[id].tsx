@@ -109,6 +109,8 @@ const OrdersDetailsScreen = () => {
                 source={{ uri: paymentData.imageUrl }}
                 style={{ width: "100%", aspectRatio: 1.2, borderRadius: 10 }}
                 contentFit="contain"
+                placeholder={require("@assets/images/placeholder.png")}
+                transition={500}
               />
             ) : (
               <>
