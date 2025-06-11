@@ -45,14 +45,20 @@ export const createProduct = async (
         {
           name: "Ultimate Pepperoni",
           price: 6.4,
+          deliveryFee: 0,
+          distance: 0,
         },
         {
           name: "ExtravaganZZa",
           price: 10.2,
+          deliveryFee: 0,
+          distance: 0,
         },
         {
           name: "MeatZZa",
           price: 15.3,
+          deliveryFee: 0,
+          distance: 0,
         },
       ],
     };

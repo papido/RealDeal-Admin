@@ -14,7 +14,7 @@ export const defaultPizzaImage =
 
 const OrdersDetailsScreen = () => {
   const { id } = useLocalSearchParams();
-  const { order, fetchOrder, loading } = useFetchIdOrders();
+  const { order, fetchOrder } = useFetchIdOrders();
   const [currentOrder, setCurrentOrder] = useState<OrderType | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentType | null>(null);
 

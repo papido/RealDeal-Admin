@@ -17,6 +17,8 @@ export type ProductType = {
 export type ProductItem = {
   name: string;
   price: number;
+  deliveryFee: number;
+  distance: number;
 };
 
 export type ProductImageType = {

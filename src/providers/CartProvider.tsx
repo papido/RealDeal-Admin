@@ -11,7 +11,13 @@ import {
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
 import { Alert } from "react-native";
-import { CartItem, OrderType, PaymentType, ProductType } from "../types";
+import {
+  CartItem,
+  OrderType,
+  PaymentType,
+  ProductItem,
+  ProductType,
+} from "../types";
 import { useAuth } from "./authProvider";
 
 type CartType = {
@@ -47,10 +53,7 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   const storage = getStorage();
   const db = getFirestore();
 
-  const addItem = (
-    product: ProductType,
-    productItem: CartItem["productItem"]
-  ) => {
+  const addItem = (product: ProductType, productItem: ProductItem) => {
     const existingItem = items.find(
       (item) =>
         item.product.id === product.id &&
@@ -105,6 +108,8 @@ const CartProvider = ({ children }: PropsWithChildren) => {
         productItem: {
           name: item.productItem.name,
           price: item.productItem.price,
+          deliveryFee: item.productItem.deliveryFee,
+          distance: item.productItem.distance,
         },
         quantity: item.quantity,
       })),
