@@ -11,7 +11,6 @@ import { useAuth } from "@/src/providers/authProvider";
 import { ProductType } from "@/src/types";
 import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -40,7 +39,11 @@ const CreateProductScreen = () => {
     const fetchProduct = async () => {
       if (!id) return;
       setLoading(true);
-      const productDoc = await getDoc(doc(firestore, "products", id as string));
+      const productDoc = await firestore()
+        .collection("products")
+        .doc(id as string)
+        .get();
+
       if (productDoc.exists()) {
         setProduct({ id: productDoc.id, ...productDoc.data() } as ProductType);
       }

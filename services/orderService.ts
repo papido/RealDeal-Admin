@@ -1,7 +1,6 @@
 import { firestore } from "@/config/firebase";
 import { OrderType, ResponseType } from "@/src/types";
 import dayjs from "dayjs";
-import { collection, doc, setDoc } from "firebase/firestore";
 
 export const createOrder = async (
   orderData: Partial<OrderType>
@@ -21,13 +20,13 @@ export const createOrder = async (
     };
 
     const orderRef = orderData?.id
-      ? doc(firestore, "orders", orderData.id)
-      : doc(collection(firestore, "orders"));
+      ? firestore().collection("orders").doc(orderData.id)
+      : firestore().collection("orders").doc(); // auto-generated ID
 
     // 🔧 Add id to the data before saving
     orderToSave.id = orderRef.id;
 
-    await setDoc(orderRef, orderToSave, { merge: true });
+    await orderRef.set(orderToSave, { merge: true });
 
     return { success: true, data: { ...orderToSave, id: orderRef.id } };
   } catch (error: any) {
@@ -54,13 +53,13 @@ export const updateOrder = async (
     };
 
     const orderRef = orderData?.id
-      ? doc(firestore, "orders", orderData.id)
-      : doc(collection(firestore, "orders"));
+      ? firestore().collection("orders").doc(orderData.id)
+      : firestore().collection("orders").doc(); // auto-generated ID
 
     // 🔧 Ensure the ID is set before saving
     orderToSave.id = orderRef.id;
 
-    await setDoc(orderRef, orderToSave, { merge: true });
+    await orderRef.set(orderToSave, { merge: true });
 
     return { success: true, data: { ...orderToSave, id: orderRef.id } };
   } catch (error: any) {

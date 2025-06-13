@@ -1,15 +1,13 @@
-import { firestore } from "@/config/firebase";
-import {
-  collection,
-  onSnapshot,
-  query,
-  QueryConstraint,
-} from "firebase/firestore";
+import firestore, {
+  FirebaseFirestoreTypes,
+} from "@react-native-firebase/firestore";
 import { useEffect, useState } from "react";
 
-const useFetchData = <T>(
+const useFetchData = <T extends FirebaseFirestoreTypes.DocumentData>(
   collectionName: string,
-  constraints: QueryConstraint[] = []
+  constraints: ((
+    ref: FirebaseFirestoreTypes.Query<T>
+  ) => FirebaseFirestoreTypes.Query<T>)[] = []
 ) => {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,29 +16,33 @@ const useFetchData = <T>(
   useEffect(() => {
     if (!collectionName) return;
 
-    const collectionRef = collection(firestore, collectionName);
-    const q = query(collectionRef, ...constraints);
+    let ref: FirebaseFirestoreTypes.Query<T> = firestore().collection(
+      collectionName
+    ) as FirebaseFirestoreTypes.Query<T>;
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const fetchedData = snapshot.docs.map((doc) => ({
+    // Apply query constraints (like where, orderBy, etc.)
+    constraints.forEach((applyConstraint) => {
+      ref = applyConstraint(ref);
+    });
+
+    const fetchData = async () => {
+      try {
+        const snapshot = await ref.get();
+        const docs: T[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as T[];
-        setData(fetchedData);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching data:", err);
-        setError(err.message);
+
+        setData(docs);
+      } catch (err: any) {
+        setError(err.message || "Error fetching data");
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
-  }, []);
-  //   }, [collectionName, constraints]);
+    fetchData();
+  }, [collectionName, constraints]);
 
   return { data, loading, error };
 };

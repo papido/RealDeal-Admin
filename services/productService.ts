@@ -1,6 +1,5 @@
 import { firestore } from "@/config/firebase";
 import { ProductType, ResponseType } from "@/src/types";
-import { collection, deleteDoc, doc, setDoc } from "firebase/firestore";
 import uuid from "react-native-uuid";
 import { uploadFileToCloudinary } from "./imageService";
 export const defaultPizzaImage =
@@ -64,13 +63,13 @@ export const createProduct = async (
     };
 
     const productRef = productData?.id
-      ? doc(firestore, "products", productData.id)
-      : doc(collection(firestore, "products"));
+      ? firestore().collection("products").doc(productData.id)
+      : firestore().collection("products").doc(); // Auto-generated ID
 
     // 🔧 Add id to the data before saving
     productToSave.id = productRef.id;
 
-    await setDoc(productRef, productToSave, { merge: true });
+    await productRef.set(productToSave, { merge: true });
 
     return { success: true, data: { ...productToSave, id: productRef.id } };
   } catch (error: any) {
@@ -111,8 +110,8 @@ export const updateProduct = async (
       }),
     };
 
-    const productRef = doc(firestore, "products", productId);
-    await setDoc(productRef, productToUpdate, { merge: true });
+    const productRef = firestore().collection("products").doc(productId);
+    await productRef.set(productToUpdate, { merge: true });
 
     return { success: true, data: { ...productToUpdate, id: productId } };
   } catch (error: any) {
@@ -125,8 +124,8 @@ export const deleteProduct = async (
   productId: string
 ): Promise<ResponseType> => {
   try {
-    const productRef = doc(firestore, "products", productId);
-    await deleteDoc(productRef);
+    const productRef = firestore().collection("products").doc(productId);
+    await productRef.delete();
     return { success: true, msg: "Product deleted successfully" };
   } catch (err: any) {
     console.log("error deleting product: ", err);

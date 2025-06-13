@@ -1,6 +1,5 @@
 import { firestore } from "@/config/firebase";
 import { OrderType } from "@/src/types";
-import { doc, getDoc } from "firebase/firestore";
 import { useState } from "react";
 
 export const useFetchIdOrders = () => {
@@ -9,7 +8,7 @@ export const useFetchIdOrders = () => {
 
   const fetchOrder = async (id: string) => {
     setLoading(true);
-    const orderDoc = await getDoc(doc(firestore, "orders", id));
+    const orderDoc = await firestore().collection("orders").doc(id).get();
     if (orderDoc.exists()) {
       setOrder({ id: orderDoc.id, ...orderDoc.data() } as OrderType);
     } else {

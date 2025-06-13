@@ -1,13 +1,11 @@
-import { auth, firestore } from "@/config/firebase";
 import { AuthContextType, UserType } from "@/src/types";
+import Constants from "expo-constants";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
+
+import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -18,21 +16,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log("firebase user: ", firebaseUser);
+    const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        // if (!firebaseUser.emailVerified) {
-        //   alert('Please verify your email before logging in.');
-        //   auth.signOut();
-        // } else {
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          name: firebaseUser?.displayName,
+          name: firebaseUser.displayName,
         });
-        updateUserData(firebaseUser.uid);
+        await updateUserData(firebaseUser.uid);
         router.replace("/");
-        // }
       } else {
         setUser(null);
       }
@@ -42,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await auth().signInWithEmailAndPassword(email, password);
       return { success: true };
     } catch (error: any) {
       let msg = error.message;
@@ -58,19 +50,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     username: string
   ) => {
     try {
-      let response = await createUserWithEmailAndPassword(
-        auth,
+      const response = await auth().createUserWithEmailAndPassword(
         email,
         password
       );
-      // let user = response.user;
-      // await sendEmailVerification(user);
-      // alert("Verification email sent. Please check your inbox.");
-
-      await setDoc(doc(firestore, "users", response?.user?.uid), {
+      await response.user.updateProfile({
+        displayName: username,
+      });
+      await firestore().collection("users").doc(response.user.uid).set({
         username,
         email,
-        uid: response?.user?.uid,
+        uid: response.user.uid,
       });
       return { success: true };
     } catch (error: any) {
@@ -78,28 +68,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (msg.includes("(auth/invalid-email)")) msg = "Invalid email";
       if (msg.includes("(auth/email-already-in-use)"))
         msg = "This email is already in use";
-
       return { success: false, msg };
     }
   };
 
+  const registerForPushTokenAsync = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    let finalStatus = status;
+
+    if (status !== "granted") {
+      const { status: newStatus } =
+        await Notifications.requestPermissionsAsync();
+      finalStatus = newStatus;
+    }
+
+    if (finalStatus !== "granted") {
+      console.log("Push notification permission not granted");
+      return null;
+    }
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: Constants.expoConfig?.extra?.eas?.projectId,
+    });
+    return tokenData.data;
+  };
+
   const updateUserData = async (uid: string) => {
     try {
-      const docRef = doc(firestore, "users", uid);
-      const docSnap = await getDoc(docRef);
+      const token = await registerForPushTokenAsync();
 
+      if (token) {
+        await firestore()
+          .collection("users")
+          .doc(uid)
+          .set({ expoPushToken: token }, { merge: true });
+      }
+
+      const docSnap = await firestore().collection("users").doc(uid).get();
       if (docSnap.exists()) {
         const data = docSnap.data();
+        if (!data) return;
         const userData: UserType = {
           uid: data.uid,
           email: data.email || null,
           name: data.name || null,
           image: data.image || null,
         };
-        setUser({ ...user, ...userData });
+        setUser(userData);
       }
     } catch (error) {
-      console.error("Error fetching user data: ", error);
+      console.error("Error fetching/updating user data: ", error);
     }
   };
 
@@ -120,7 +138,6 @@ export default AuthContext;
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-
   if (!context) {
     throw new Error("useAuth must be wrapped inside AuthProvider");
   }

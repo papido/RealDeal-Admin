@@ -1,6 +1,5 @@
 import { firestore } from "@/config/firebase";
 import { ProductType } from "@/src/types";
-import { doc, getDoc } from "firebase/firestore";
 import { useState } from "react";
 
 export const useFetchIdProducts = () => {
@@ -9,7 +8,7 @@ export const useFetchIdProducts = () => {
 
   const fetchProduct = async (id: string) => {
     setLoading(true);
-    const productDoc = await getDoc(doc(firestore, "products", id));
+    const productDoc = await firestore().collection("products").doc(id).get();
     if (productDoc.exists()) {
       setProduct({ id: productDoc.id, ...productDoc.data() } as ProductType);
     } else {
