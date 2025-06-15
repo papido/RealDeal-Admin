@@ -1,13 +1,12 @@
-import firestore, {
-  FirebaseFirestoreTypes,
-} from "@react-native-firebase/firestore";
+import { firestore } from "@/config/firebase";
+import { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
 import { useEffect, useState } from "react";
 
 const useFetchData = <T extends FirebaseFirestoreTypes.DocumentData>(
   collectionName: string,
-  constraints: ((
+  buildQuery?: (
     ref: FirebaseFirestoreTypes.Query<T>
-  ) => FirebaseFirestoreTypes.Query<T>)[] = []
+  ) => FirebaseFirestoreTypes.Query<T>
 ) => {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,29 +19,27 @@ const useFetchData = <T extends FirebaseFirestoreTypes.DocumentData>(
       collectionName
     ) as FirebaseFirestoreTypes.Query<T>;
 
-    // Apply query constraints (like where, orderBy, etc.)
-    constraints.forEach((applyConstraint) => {
-      ref = applyConstraint(ref);
-    });
+    if (buildQuery) {
+      ref = buildQuery(ref);
+    }
 
-    const fetchData = async () => {
-      try {
-        const snapshot = await ref.get();
-        const docs: T[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
+    const unsubscribe = ref.onSnapshot(
+      (snapshot) => {
+        const docs = snapshot.docs.map((doc) => ({
           ...doc.data(),
+          id: doc.id,
         })) as T[];
-
         setData(docs);
-      } catch (err: any) {
-        setError(err.message || "Error fetching data");
-      } finally {
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
         setLoading(false);
       }
-    };
+    );
 
-    fetchData();
-  }, [collectionName, constraints]);
+    return () => unsubscribe();
+  }, [collectionName, buildQuery?.toString()]);
 
   return { data, loading, error };
 };

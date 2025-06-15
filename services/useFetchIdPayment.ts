@@ -6,7 +6,7 @@ import {
   getFirestore,
   query,
   where,
-} from "firebase/firestore";
+} from "@react-native-firebase/firestore";
 
 export const getPaymentByOrderId = async (
   orderId: string

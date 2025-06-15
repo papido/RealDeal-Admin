@@ -1,9 +1,6 @@
-import firebase from "@react-native-firebase/app";
+// @/config/firebase.js
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
-import messaging from "@react-native-firebase/messaging"; // optional, if you need messaging
+import storage from "@react-native-firebase/storage";
 
-// Firebase native SDK uses google-services.json and GoogleService-Info.plist
-// You don't need to manually initialize with a config object.
-
-export { auth, firebase, firestore, messaging };
+export { auth, firestore, storage };

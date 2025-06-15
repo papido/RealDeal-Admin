@@ -3,16 +3,18 @@ import ProductListItem from "@/src/components/ProductListItem";
 import { useAuth } from "@/src/providers/authProvider";
 import { ProductType } from "@/src/types";
 import { router } from "expo-router";
-import { orderBy, where } from "firebase/firestore";
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 const MenuScreen = () => {
   const { user } = useAuth();
-  const { data: products, loading } = useFetchData<ProductType>("products", [
-    where("uid", "==", user?.uid),
-    orderBy("createdAt", "desc"),
-  ]);
+  const { data: products, loading } = useFetchData<ProductType>(
+    "products",
+    (ref) => {
+      if (!user?.uid) return ref; // Or return null to skip the query altogether
+      return ref.where("uid", "==", user.uid).orderBy("createdAt", "desc");
+    }
+  );
 
   return (
     <>

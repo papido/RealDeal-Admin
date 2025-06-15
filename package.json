@@ -18,11 +18,11 @@
     "@react-native-firebase/auth": "^22.2.1",
     "@react-native-firebase/firestore": "^22.2.1",
     "@react-native-firebase/messaging": "^22.2.1",
+    "@react-native-firebase/storage": "^22.2.1",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/material-top-tabs": "^7.2.13",
     "@react-navigation/native": "^7.1.6",
-    "@shopify/flash-list": "1.7.6",
     "axios": "^1.9.0",
     "dayjs": "^1.11.13",
     "expo": "^53.0.11",
@@ -59,7 +59,8 @@
     "react-native-uuid": "^2.0.3",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "typescript": "~5.8.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -67,6 +68,7 @@
     "babel-plugin-module-resolver": "^5.0.2",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
+    "expo-module-scripts": "^4.1.7",
     "typescript": "~5.8.3"
   },
   "private": true

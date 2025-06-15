@@ -1,19 +1,14 @@
-import { auth } from "@/config/firebase";
 import Button from "@/src/components/Button";
-import { useRouter } from "expo-router";
+import { useAuth } from "@/src/providers/authProvider";
 import React from "react";
 import { Text, View } from "react-native";
 
 const ProfileScreen = () => {
-  const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLogout = async () => {
-    await auth().signOut();
-    router.replace("/");
-  };
   return (
     <View>
-      <Button onPress={handleLogout}>
+      <Button onPress={logout}>
         <Text>Sign Out</Text>
       </Button>
     </View>

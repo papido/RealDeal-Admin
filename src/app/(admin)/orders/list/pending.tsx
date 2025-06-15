@@ -3,16 +3,18 @@ import Loading from "@/src/components/Loading";
 import OrderListItem from "@/src/components/OrderListItem";
 import { useAuth } from "@/src/providers/authProvider";
 import { OrderType } from "@/src/types";
-import { orderBy, where } from "firebase/firestore";
 import React, { useMemo } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 const PendingScreen = () => {
   const { user } = useAuth();
-  const { data: orders, loading } = useFetchData<OrderType>("orders", [
-    where("uid", "==", user?.uid),
-    orderBy("createdAt", "desc"),
-  ]);
+  const { data: orders, loading } = useFetchData<OrderType>(
+    "orders",
+    (ref) =>
+      user?.uid
+        ? ref.where("uid", "==", user.uid).orderBy("createdAt", "desc")
+        : ref.where("uid", "==", "__INVALID_UID__") // This will return empty results
+  );
 
   const pendingOrders = useMemo(() => {
     return orders.filter((order) => order.status === "Pending");

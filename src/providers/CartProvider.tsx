@@ -1,14 +1,9 @@
 import { createOrder } from "@/services/orderService";
+import firestore from "@react-native-firebase/firestore";
+import storage from "@react-native-firebase/storage";
 import dayjs from "dayjs";
 import { randomUUID } from "expo-crypto";
 import { router } from "expo-router";
-import {
-  addDoc,
-  collection,
-  getFirestore,
-  Timestamp,
-} from "firebase/firestore";
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
 import { Alert } from "react-native";
 import {
@@ -50,8 +45,6 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<PaymentType | null>(null);
-  const storage = getStorage();
-  const db = getFirestore();
 
   const addItem = (product: ProductType, productItem: ProductItem) => {
     const existingItem = items.find(
@@ -123,31 +116,45 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   const submitPayment = async (image: string) => {
     setLoading(true);
 
-    let res = await createOrder(order);
-    if (res.success) {
-      console.log("Order successfully created", res);
-    } else {
-      Alert.alert("Order", res.msg);
+    try {
+      let res = await createOrder(order);
+      if (res.success) {
+        console.log("Order successfully created", res);
+      } else {
+        Alert.alert("Order", res.msg);
+        setLoading(false);
+        return;
+      }
+
+      // Convert image to blob
+      const response = await fetch(image);
+      const blob = await response.blob();
+
+      // Create storage reference and upload using the new API
+      const filename = `payment_proofs/${order.uid}_${Date.now()}.jpg`;
+      const storageRef = storage().ref(filename);
+      await storageRef.put(blob);
+      const downloadURL = await storageRef.getDownloadURL();
+
+      // Create payment data and add to Firestore using the new API
+      const paymentData: PaymentType = {
+        imageUrl: downloadURL,
+        timestamp: firestore.Timestamp.now(),
+        uid: order.uid,
+        amount: order.total,
+        id: order.id,
+      };
+
+      await firestore().collection("payment_uploads").add(paymentData);
+
+      setPayment(paymentData);
+      setLoading(false);
+      alert("Payment uploaded. Waiting for approval.");
+    } catch (error) {
+      console.error("Error submitting payment:", error);
+      Alert.alert("Error", "Failed to submit payment. Please try again.");
+      setLoading(false);
     }
-
-    const response = await fetch(image);
-    const blob = await response.blob();
-    const filename = `payment_proofs/${order.uid}_${Date.now()}.jpg`;
-    const storageRef = ref(storage, filename);
-    await uploadBytes(storageRef, blob);
-    const downloadURL = await getDownloadURL(storageRef);
-
-    const paymentData: PaymentType = {
-      imageUrl: downloadURL,
-      timestamp: Timestamp.now(),
-      uid: order.uid,
-      amount: order.total,
-      id: order.id,
-    };
-    await addDoc(collection(db, "payment_uploads"), paymentData);
-    setPayment(paymentData);
-    setLoading(false);
-    alert("Payment uploaded. Waiting for approval.");
   };
 
   return (

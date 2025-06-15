@@ -3,15 +3,13 @@ import Loading from "@/src/components/Loading";
 import OrderListItem from "@/src/components/OrderListItem";
 import { useAuth } from "@/src/providers/authProvider";
 import { OrderType } from "@/src/types";
-import { orderBy, where } from "firebase/firestore";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
 const OrdersScreen = () => {
   const { user } = useAuth();
-  const { data: orders, loading } = useFetchData<OrderType>("orders", [
-    where("uid", "==", user?.uid),
-    orderBy("createdAt", "desc"),
-  ]);
+  const { data: orders, loading } = useFetchData<OrderType>("orders", (ref) =>
+    ref.where("uid", "==", user?.uid).orderBy("createdAt", "desc")
+  );
 
   if (loading) return <Loading />;
   return (

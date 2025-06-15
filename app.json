@@ -3,6 +3,7 @@
     "name": "RealDeal",
     "slug": "RealDeal",
     "version": "1.0.0",
+    "entryPoint": "./src/app/index.tsx",
     "orientation": "portrait",
     "icon": "./assets/images/iconImage.jpg",
     "scheme": "realdeal",
@@ -17,7 +18,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.fauzanafk.RealDeal"
+      "package": "com.fauzanafk.RealDeal",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -46,6 +48,7 @@
       "eas": {
         "projectId": "3ee1b712-c40c-4f1f-bf53-c132e5b3cb36"
       }
-    }
+    },
+    "owner": "fauzanafk"
   }
 }

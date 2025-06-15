@@ -1,4 +1,3 @@
-// hooks/useDeliveryNotifications.ts
 import { firestore } from "@/config/firebase";
 import { useState } from "react";
 
@@ -37,11 +36,12 @@ export const useDeliveryNotifications = () => {
     }
   };
 
-  // Send delivery notification via your backend
+  // FIXED: Send delivery notification with proper error handling
   const sendDeliveryNotification = async (data: DeliveryNotificationData) => {
     setSending(true);
     try {
       const customerToken = await getCustomerPushToken(data.customerUid);
+      console.log("Customer push token:", customerToken);
 
       if (!customerToken) {
         console.log("Customer push token not found");
@@ -51,21 +51,19 @@ export const useDeliveryNotifications = () => {
         };
       }
 
-      // Replace with your actual backend URL
       const response = await fetch(
-        "https://real-deal-backend.vercel.app/api/notifications/send-delivery-notification",
+        "https://us-central1-realdeal-f46e1.cloudfunctions.net/sendDeliveryNotification",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Add your auth headers here if needed
-            // 'Authorization': 'Bearer YOUR_AUTH_TOKEN',
           },
           body: JSON.stringify({
             pushToken: customerToken,
             orderId: data.orderId,
             title: "Order Delivered! 📦",
             body: `Great news! Your order #${data.orderId} has been successfully delivered. Thank you for your purchase!`,
+            sound: "default",
             data: {
               type: "delivery",
               orderId: data.orderId,
@@ -79,20 +77,24 @@ export const useDeliveryNotifications = () => {
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${
-            errorData.error || "Unknown error"
-          }`
-        );
-      }
+      console.log("📡 API Response Status:", response.status);
 
+      // FIXED: Properly handle successful response
       const result = await response.json();
-      console.log("Delivery notification sent:", result);
-      return { success: true, data: result };
+      console.log("✅ Delivery notification sent successfully:", result);
+
+      // Check if the notification was actually sent successfully
+      if (result.success) {
+        return { success: true, data: result };
+      } else {
+        console.error("❌ Notification failed despite 200 response:", result);
+        return {
+          success: false,
+          error: result.error || "Notification failed to send",
+        };
+      }
     } catch (error) {
-      console.error("Error sending delivery notification:", error);
+      console.error("❌ Error sending delivery notification:", error);
       return {
         success: false,
         error:
@@ -103,7 +105,7 @@ export const useDeliveryNotifications = () => {
     }
   };
 
-  // Send notification to multiple customers (batch delivery)
+  // FIXED: Batch notifications with proper error handling
   const sendBatchDeliveryNotifications = async (
     deliveries: DeliveryNotificationData[]
   ) => {
@@ -111,7 +113,6 @@ export const useDeliveryNotifications = () => {
     try {
       const notifications = [];
 
-      // Prepare all notifications with tokens
       for (const delivery of deliveries) {
         const customerToken = await getCustomerPushToken(delivery.customerUid);
 
@@ -141,15 +142,12 @@ export const useDeliveryNotifications = () => {
         };
       }
 
-      // Replace with your actual backend URL
       const response = await fetch(
-        "https://real-deal-backend.vercel.app/api/notifications/send-batch-delivery-notifications",
+        "https://us-central1-realdeal-f46e1.cloudfunctions.net/sendBatchDeliveryNotifications",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Add your auth headers here if needed
-            // 'Authorization': 'Bearer YOUR_AUTH_TOKEN',
           },
           body: JSON.stringify({
             notifications,
@@ -157,8 +155,16 @@ export const useDeliveryNotifications = () => {
         }
       );
 
+      console.log("📡 Batch API Response Status:", response.status);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          errorData = { error: "Failed to parse error response" };
+        }
+
         throw new Error(
           `HTTP error! status: ${response.status}, message: ${
             errorData.error || "Unknown error"
@@ -167,10 +173,18 @@ export const useDeliveryNotifications = () => {
       }
 
       const result = await response.json();
-      console.log("Batch delivery notifications sent:", result);
-      return { success: true, data: result };
+      console.log("✅ Batch delivery notifications sent:", result);
+
+      if (result.success) {
+        return { success: true, data: result };
+      } else {
+        return {
+          success: false,
+          error: result.error || "Batch notifications failed",
+        };
+      }
     } catch (error) {
-      console.error("Error sending batch delivery notifications:", error);
+      console.error("❌ Error sending batch delivery notifications:", error);
       return {
         success: false,
         error:
@@ -181,11 +195,12 @@ export const useDeliveryNotifications = () => {
     }
   };
 
-  // Test notification function (useful for development)
+  // FIXED: Test notification with proper error handling
   const sendTestNotification = async (customerUid: string) => {
     setSending(true);
     try {
       const customerToken = await getCustomerPushToken(customerUid);
+      console.log("🔍 Debug - Push token from Firestore:", customerToken);
 
       if (!customerToken) {
         return {
@@ -194,9 +209,8 @@ export const useDeliveryNotifications = () => {
         };
       }
 
-      // Replace with your actual backend URL
       const response = await fetch(
-        "https://real-deal-backend.vercel.app/api/notifications/test-notification",
+        "https://us-central1-realdeal-f46e1.cloudfunctions.net/sendTestNotification",
         {
           method: "POST",
           headers: {
@@ -210,14 +224,37 @@ export const useDeliveryNotifications = () => {
         }
       );
 
+      console.log("📡 API Response Status:", response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          errorData = { error: "Failed to parse error response" };
+        }
+
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorData.error || "Unknown error"}`
+        );
       }
 
       const result = await response.json();
-      return { success: true, data: result };
+      console.log("📡 API Response Data:", result);
+
+      // FIXED: Check if the response indicates success
+      if (result.success) {
+        console.log("✅ Test notification sent successfully!");
+        return { success: true, data: result };
+      } else {
+        console.error("❌ Test notification failed:", result);
+        return {
+          success: false,
+          error: result.error || "Test notification failed",
+        };
+      }
     } catch (error) {
-      console.error("Error sending test notification:", error);
+      console.error("❌ Error sending test notification:", error);
       return {
         success: false,
         error:

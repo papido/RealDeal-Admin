@@ -1,4 +1,5 @@
-import { Timestamp } from "firebase/firestore";
+import { Timestamp } from "@react-native-firebase/firestore";
+import * as Notifications from "expo-notifications";
 import { ViewStyle } from "react-native";
 
 export type ProductType = {
@@ -91,9 +92,9 @@ export type ResponseType = {
   msg?: string;
 };
 
-export type AuthContextType = {
-  user: UserType;
-  setUser: Function;
+export interface AuthContextType {
+  user: UserType | null;
+  setUser: (user: UserType | null) => void;
   login: (
     email: string,
     password: string
@@ -101,10 +102,15 @@ export type AuthContextType = {
   register: (
     email: string,
     password: string,
-    name: string
+    username: string
   ) => Promise<{ success: boolean; msg?: string }>;
-  updateUserData: (userId: string) => Promise<void>;
-};
+  logout: () => Promise<void>;
+  updateUserData: (uid: string) => Promise<UserType | null>;
+  expoPushToken?: string | null;
+  notification?: Notifications.Notification | null;
+  error?: Error | null;
+  isLoading: boolean;
+}
 
 export type PaymentType = {
   imageUrl?: string;

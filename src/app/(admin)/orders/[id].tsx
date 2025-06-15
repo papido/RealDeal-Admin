@@ -14,12 +14,14 @@ import {
 } from "@/src/types";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
+  RefreshControl,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -27,50 +29,96 @@ import {
 export const defaultPizzaImage =
   "https://notjustdev-dummy.s3.us-east-2.amazonaws.com/food/default.png";
 
+interface CustomerData {
+  email: string;
+  username: string;
+  expoPushToken?: string;
+  address?: string;
+  [key: string]: any;
+}
+
 const OrdersDetailsScreen = () => {
   const { id } = useLocalSearchParams();
-  const { order, fetchOrder } = useFetchIdOrders();
+  const { order, fetchOrder, loading: orderLoading } = useFetchIdOrders();
   const [currentOrder, setCurrentOrder] = useState<OrderType | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentType | null>(null);
-  const [customerData, setCustomerData] = useState<any>(null);
+  const [customerData, setCustomerData] = useState<CustomerData | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
 
   // Use the delivery notifications hook
   const { sendDeliveryNotification, sending } = useDeliveryNotifications();
 
+  // Initial data loading
   useEffect(() => {
-    const loadPayment = async () => {
-      if (id) {
-        fetchOrder(id as string);
-        const payment = await getPaymentByOrderId(id as string);
-        setPaymentData(payment);
-      }
-    };
-    loadPayment();
+    if (id && typeof id === "string") {
+      loadInitialData();
+    }
   }, [id]);
 
+  // Update current order when order data changes
   useEffect(() => {
     if (order) {
       setCurrentOrder(order);
-      // Load customer data when order is available
-      loadCustomerData(order.uid!);
+      if (order.uid) {
+        loadCustomerData(order.uid);
+      }
     }
   }, [order]);
 
+  const loadInitialData = async () => {
+    if (!id || typeof id !== "string") return;
+
+    try {
+      // Load order data
+      await fetchOrder(id);
+
+      // Load payment data
+      setLoadingPayment(true);
+      const payment = await getPaymentByOrderId(id);
+      setPaymentData(payment);
+    } catch (error) {
+      console.error("Error loading initial data:", error);
+      Alert.alert("Error", "Failed to load order details");
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
   // Function to load customer data from Firestore
   const loadCustomerData = async (userId: string) => {
+    if (!userId) return;
+
     try {
+      setLoadingCustomer(true);
       const userDoc = await firestore().collection("users").doc(userId).get();
+
       if (userDoc.exists()) {
-        setCustomerData(userDoc.data());
+        const data = userDoc.data() as CustomerData;
+        setCustomerData(data);
+        console.log("Customer data loaded:", {
+          email: data.email,
+          hasToken: !!data.expoPushToken,
+        });
+      } else {
+        console.warn("Customer document not found for userId:", userId);
+        setCustomerData(null);
       }
     } catch (error) {
       console.error("Error loading customer data:", error);
+      Alert.alert("Warning", "Could not load customer information");
+    } finally {
+      setLoadingCustomer(false);
     }
   };
 
   // Enhanced status update function with delivery notification
   const handleStatusUpdate = async (newStatus: OrderStatus) => {
-    if (!currentOrder) return;
+    if (!currentOrder) {
+      Alert.alert("Error", "Order data not available");
+      return;
+    }
 
     Alert.alert(
       "Update Status",
@@ -85,7 +133,7 @@ const OrdersDetailsScreen = () => {
           onPress: async () => {
             try {
               // Update order status in database
-              const updatedOrder = {
+              const updatedOrder: OrderType = {
                 ...currentOrder,
                 status: newStatus,
               };
@@ -98,17 +146,18 @@ const OrdersDetailsScreen = () => {
                 // Send delivery notification if status is "Delivered"
                 if (newStatus.toLowerCase() === "delivered") {
                   await handleDeliveryNotification(updatedOrder);
+                } else {
+                  Alert.alert(
+                    "Success",
+                    `Order status updated to ${newStatus}`
+                  );
                 }
-
-                Alert.alert(
-                  "Success",
-                  newStatus.toLowerCase() === "delivered"
-                    ? "Order marked as delivered and customer has been notified!"
-                    : `Order status updated to ${newStatus}`
-                );
               } else {
                 console.warn("Failed to update status:", result.msg);
-                Alert.alert("Error", "Failed to update order status");
+                Alert.alert(
+                  "Error",
+                  result.msg || "Failed to update order status"
+                );
               }
             } catch (error) {
               console.error("Error updating order status:", error);
@@ -126,7 +175,17 @@ const OrdersDetailsScreen = () => {
   // Function to handle delivery notification
   const handleDeliveryNotification = async (order: OrderType) => {
     try {
-      if (!customerData?.expoPushToken) {
+      // Check if customer data is available
+      if (!customerData) {
+        Alert.alert(
+          "Notice",
+          "Order marked as delivered, but customer information is not available."
+        );
+        return;
+      }
+
+      // Check if customer has push token
+      if (!customerData.expoPushToken) {
         console.log("Customer doesn't have push token registered");
         Alert.alert(
           "Notice",
@@ -141,18 +200,28 @@ const OrdersDetailsScreen = () => {
           (item) => `${item.quantity}x ${item.productName || "Item"}`
         ) || [];
 
+      console.log("Sending delivery notification for order:", order.id);
+
       const notificationResult = await sendDeliveryNotification({
         orderId: order.id!,
         customerUid: order.uid!,
         orderDetails: {
           items: orderItems,
           totalAmount: order.total || 0,
-          deliveryAddress: customerData?.address || "Your address",
+          deliveryAddress: customerData.address || "Your address",
         },
       });
 
-      if (!notificationResult.success) {
-        console.warn("Failed to send delivery notification");
+      if (notificationResult.success) {
+        Alert.alert(
+          "Success",
+          "Order marked as delivered and customer has been notified!"
+        );
+      } else {
+        console.warn(
+          "Failed to send delivery notification:",
+          notificationResult.error
+        );
         Alert.alert(
           "Warning",
           "Order marked as delivered, but failed to send notification to customer."
@@ -167,158 +236,194 @@ const OrdersDetailsScreen = () => {
     }
   };
 
-  if (!order) {
+  // Pull to refresh functionality
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadInitialData();
+      if (currentOrder?.uid) {
+        await loadCustomerData(currentOrder.uid);
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [id, currentOrder?.uid]);
+
+  // Render customer info component
+  const renderCustomerInfo = () => {
+    if (loadingCustomer) {
+      return (
+        <View style={styles.customerInfoContainer}>
+          <ActivityIndicator size="small" color={colors.light.tint} />
+          <Text style={styles.loadingText}>Loading customer info...</Text>
+        </View>
+      );
+    }
+
+    if (!customerData) {
+      return (
+        <View style={[styles.customerInfoContainer, styles.warningContainer]}>
+          <Text style={styles.customerInfoTitle}>Customer Info:</Text>
+          <Text style={styles.warningText}>
+            Customer information not available
+          </Text>
+        </View>
+      );
+    }
+
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.customerInfoContainer}>
+        <Text style={styles.customerInfoTitle}>Customer Info:</Text>
+        <Text style={styles.customerInfoText}>Email: {customerData.email}</Text>
+        <Text style={styles.customerInfoText}>
+          Username: {customerData.username}
+        </Text>
+        <Text
+          style={[
+            styles.customerInfoText,
+            {
+              color: customerData.expoPushToken ? "green" : "orange",
+              fontWeight: "500",
+            },
+          ]}
+        >
+          Push Notifications:{" "}
+          {customerData.expoPushToken ? "Enabled ✓" : "Not Available ⚠️"}
+        </Text>
+        {customerData.address && (
+          <Text style={styles.customerInfoText}>
+            Address: {customerData.address}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  // Render payment section
+  const renderPaymentSection = () => (
+    <>
+      <Text style={styles.sectionTitle}>Payment Proof</Text>
+      {loadingPayment ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.light.tint} />
+          <Text style={styles.loadingText}>Loading payment info...</Text>
+        </View>
+      ) : paymentData?.imageUrl ? (
+        <Image
+          source={{ uri: paymentData.imageUrl }}
+          style={styles.paymentImage}
+          contentFit="contain"
+          placeholder={require("@assets/images/placeholder.png")}
+          transition={500}
+        />
+      ) : (
+        <View style={styles.noPaymentContainer}>
+          <Text style={styles.noPaymentText}>No payment image available.</Text>
+        </View>
+      )}
+    </>
+  );
+
+  // Show loading screen
+  if (orderLoading || !order) {
+    return (
+      <View style={styles.loadingScreen}>
         <Loading />
-        <Text style={{ marginTop: 10 }}>Loading order...</Text>
+        <Text style={styles.loadingScreenText}>Loading order...</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ padding: 10 }}>
+    <View style={styles.container}>
       <Stack.Screen options={{ title: `Order #${id}` }} />
       <FlatList
         data={order.orderItems}
         renderItem={({ item }) => <OrderItemListItem item={item} />}
-        contentContainerStyle={{ gap: 10 }}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.light.tint}
+          />
+        }
         ListFooterComponent={() => (
           <>
-            <Text style={{ fontWeight: "bold", fontSize: 18, marginTop: 20 }}>
-              Order Status
-            </Text>
+            <Text style={styles.sectionTitle}>Order Status</Text>
 
             {/* Customer Info Display */}
-            {customerData && (
-              <View
-                style={{
-                  backgroundColor: "#f5f5f5",
-                  padding: 10,
-                  borderRadius: 8,
-                  marginVertical: 10,
-                }}
-              >
-                <Text style={{ fontWeight: "bold" }}>Customer Info:</Text>
-                <Text>Email: {customerData.email}</Text>
-                <Text>Username: {customerData.username}</Text>
-                <Text
-                  style={{
-                    color: customerData.expoPushToken ? "green" : "orange",
-                  }}
-                >
-                  Push Notifications:{" "}
-                  {customerData.expoPushToken
-                    ? "Enabled ✓"
-                    : "Not Available ⚠️"}
-                </Text>
-              </View>
-            )}
+            {renderCustomerInfo()}
 
-            <View style={{ flexDirection: "row", gap: 5, flexWrap: "wrap" }}>
-              {OrderStatusList.map((status) => (
-                <Pressable
-                  key={status}
-                  onPress={() => handleStatusUpdate(status)}
-                  disabled={sending}
-                  style={{
-                    borderColor: colors.light.tint,
-                    borderWidth: 1,
-                    padding: 10,
-                    borderRadius: 5,
-                    marginVertical: 5,
-                    backgroundColor:
-                      currentOrder?.status === status
-                        ? colors.light.tint
-                        : "transparent",
-                    opacity: sending ? 0.6 : 1,
-                    minWidth: 80,
-                    alignItems: "center",
-                  }}
-                >
-                  {sending && status.toLowerCase() === "delivered" ? (
-                    <ActivityIndicator
-                      size="small"
-                      color={
-                        currentOrder?.status === status
-                          ? "#fff"
-                          : colors.light.tint
-                      }
-                    />
-                  ) : (
-                    <Text
-                      style={{
-                        color:
-                          currentOrder?.status === status ? "#fff" : "#000",
-                        fontWeight:
-                          currentOrder?.status === status ? "bold" : "normal",
-                      }}
-                    >
-                      {status}
-                      {status.toLowerCase() === "delivered" && " 📦"}
-                    </Text>
-                  )}
-                </Pressable>
-              ))}
+            {/* Status Buttons */}
+            <View style={styles.statusButtonsContainer}>
+              {OrderStatusList.map((status) => {
+                const isCurrentStatus = currentOrder?.status === status;
+                const isDeliveredButton = status.toLowerCase() === "delivered";
+                const isDisabled = sending && isDeliveredButton;
+
+                return (
+                  <Pressable
+                    key={status}
+                    onPress={() => handleStatusUpdate(status)}
+                    disabled={isDisabled}
+                    style={[
+                      styles.statusButton,
+                      {
+                        backgroundColor: isCurrentStatus
+                          ? colors.light.tint
+                          : "transparent",
+                        opacity: isDisabled ? 0.6 : 1,
+                      },
+                    ]}
+                  >
+                    {isDisabled ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={isCurrentStatus ? "#fff" : colors.light.tint}
+                      />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.statusButtonText,
+                          {
+                            color: isCurrentStatus ? "#fff" : "#000",
+                            fontWeight: isCurrentStatus ? "bold" : "normal",
+                          },
+                        ]}
+                      >
+                        {status}
+                        {isDeliveredButton && " 📦"}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
 
-            {/* Payment Image Section */}
-            <Text style={{ fontWeight: "bold", fontSize: 18, marginTop: 20 }}>
-              Payment Proof
-            </Text>
-            {paymentData?.imageUrl ? (
-              <Image
-                source={{ uri: paymentData.imageUrl }}
-                style={{
-                  width: "100%",
-                  aspectRatio: 1.2,
-                  borderRadius: 10,
-                  marginTop: 10,
-                }}
-                contentFit="contain"
-                placeholder={require("@assets/images/placeholder.png")}
-                transition={500}
-              />
-            ) : (
-              <View
-                style={{
-                  backgroundColor: "#f5f5f5",
-                  padding: 20,
-                  borderRadius: 10,
-                  marginTop: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    fontSize: 16,
-                    color: "#666",
-                  }}
-                >
-                  No payment image available.
-                </Text>
-              </View>
-            )}
+            {/* Payment Section */}
+            {renderPaymentSection()}
 
             {/* Order Summary */}
-            <View
-              style={{
-                backgroundColor: "#f9f9f9",
-                padding: 15,
-                borderRadius: 10,
-                marginTop: 20,
-              }}
-            >
-              <Text
-                style={{ fontWeight: "bold", fontSize: 16, marginBottom: 10 }}
-              >
-                Order Summary
+            <View style={styles.summaryContainer}>
+              <Text style={styles.summaryTitle}>Order Summary</Text>
+              <Text style={styles.summaryText}>Order ID: #{order.id}</Text>
+              <Text style={styles.summaryText}>
+                Total: ${order.total?.toFixed(2) || "0.00"}
               </Text>
-              <Text>Order ID: #{order.id}</Text>
-              <Text>Total: ${order.total?.toFixed(2) || "0.00"}</Text>
-              <Text>Status: {currentOrder?.status}</Text>
-              <Text>Items: {order.orderItems?.length || 0}</Text>
+              <Text style={styles.summaryText}>
+                Status: {currentOrder?.status || "Unknown"}
+              </Text>
+              <Text style={styles.summaryText}>
+                Items: {order.orderItems?.length || 0}
+              </Text>
+              {customerData && (
+                <Text style={styles.summaryText}>
+                  Customer: {customerData.username} ({customerData.email})
+                </Text>
+              )}
             </View>
           </>
         )}
@@ -326,5 +431,118 @@ const OrdersDetailsScreen = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 10,
+  },
+  loadingScreen: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingScreenText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+  listContainer: {
+    gap: 10,
+  },
+  sectionTitle: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  customerInfoContainer: {
+    backgroundColor: "#f5f5f5",
+    padding: 15,
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  warningContainer: {
+    backgroundColor: "#fff3cd",
+    borderColor: "#ffeaa7",
+    borderWidth: 1,
+  },
+  customerInfoTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  customerInfoText: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginLeft: 10,
+    color: "#666",
+  },
+  warningText: {
+    color: "#856404",
+    fontStyle: "italic",
+  },
+  statusButtonsContainer: {
+    flexDirection: "row",
+    gap: 5,
+    flexWrap: "wrap",
+    marginBottom: 10,
+  },
+  statusButton: {
+    borderColor: colors.light.tint,
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 5,
+    minWidth: 90,
+    alignItems: "center",
+  },
+  statusButtonText: {
+    fontSize: 14,
+  },
+  paymentImage: {
+    width: "100%",
+    aspectRatio: 1.2,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  noPaymentContainer: {
+    backgroundColor: "#f5f5f5",
+    padding: 20,
+    borderRadius: 10,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  noPaymentText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#666",
+  },
+  summaryContainer: {
+    backgroundColor: "#f9f9f9",
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  summaryTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  summaryText: {
+    fontSize: 14,
+    marginBottom: 4,
+    color: "#333",
+  },
+});
 
 export default OrdersDetailsScreen;
