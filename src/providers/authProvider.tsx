@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
           // Show an alert to confirm reception
           Alert.alert(
-            "Notification Received!",
+            "Order Received!",
             JSON.stringify(notification.request.content, null, 2)
           );
         });
