@@ -81,9 +81,10 @@ export type OrderItem = {
 
 export type UserType = {
   uid?: string;
-  email?: string | null;
-  name: string | null;
+  email?: string;
+  username: string;
   image?: any;
+  address?: string;
 } | null;
 
 export type ResponseType = {

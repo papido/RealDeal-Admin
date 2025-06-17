@@ -41,10 +41,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         const userData = await updateUserData(firebaseUser.uid);
-        if (userData && isLoggedIn) {
+        if (userData) {
           setUser(userData);
-          console.log("User data:", userData); // Log the user data here
-          await setupNotifications(firebaseUser.uid);
+          setIsLoggedIn(true); // Ensure this is updated too
+          console.log("User data:", userData);
           router.replace("/");
         }
       } else {
@@ -92,7 +92,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         await firestore().collection("users").doc(uid).set(
           {
             expoPushToken: token,
-            tokenUpdatedAt: new Date().toISOString(), // Track when token was updated
           },
           { merge: true }
         );
@@ -180,7 +179,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         email,
         uid: response.user.uid,
         createdAt: firestore.FieldValue.serverTimestamp(),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
+        address: "",
       });
 
       // Redirect to sign-in page manually
@@ -206,8 +205,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       return {
         uid: data?.uid,
         email: data?.email || null,
-        name: data?.username || data?.name || null,
+        username: data?.username || null,
         image: data?.image || null,
+        address: data?.address || null,
       };
     } catch (error) {
       console.error("Failed to update user data:", error);
