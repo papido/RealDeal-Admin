@@ -1,6 +1,7 @@
 import * as Location from "expo-location";
 import React, { useCallback, useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
+import { useAuth } from "../providers/authProvider";
 import { useCart } from "../providers/CartProvider";
 import Button from "./Button";
 
@@ -26,6 +27,7 @@ const DeliveryPricing = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const { total, items, getLocation, location } = useCart();
+  const { user } = useAuth();
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = useCallback(
@@ -48,6 +50,18 @@ const DeliveryPricing = () => {
   // Calculate delivery info from coordinates
   const calculateDeliveryInfo = useCallback(
     (coords: Location.LocationObjectCoords): DeliveryInfo => {
+      // Validate coordinates before calculation
+      if (
+        !coords.latitude ||
+        !coords.longitude ||
+        coords.latitude === 0 ||
+        coords.longitude === 0 ||
+        Math.abs(coords.latitude) > 90 ||
+        Math.abs(coords.longitude) > 180
+      ) {
+        throw new Error("Invalid coordinates provided");
+      }
+
       const distance = calculateDistance(
         STORE_LOCATION.latitude,
         STORE_LOCATION.longitude,
@@ -131,7 +145,10 @@ const DeliveryPricing = () => {
   // Initialize with existing location data
   useEffect(() => {
     if (location?.coords && !deliveryInfo) {
-      processLocation(location);
+      // Only process if we have valid coordinates
+      if (location.coords.latitude && location.coords.longitude) {
+        processLocation(location);
+      }
     }
   }, [location, deliveryInfo, processLocation]);
 
@@ -140,14 +157,18 @@ const DeliveryPricing = () => {
     return total + deliveryInfo.fee;
   };
 
-  const hasValidLocation = userLocation || location;
+  const hasValidLocation =
+    (userLocation?.coords?.latitude && userLocation?.coords?.longitude) ||
+    (location?.coords?.latitude && location?.coords?.longitude);
   const shouldShowDeliveryInfo = deliveryInfo && deliveryInfo.isWithinRange;
+  const shouldShowLocationButton =
+    !hasValidLocation || (!deliveryInfo && hasValidLocation);
 
   return (
     <>
       {/* Location and Delivery Section */}
       <View style={styles.deliverySection}>
-        {!hasValidLocation && (
+        {shouldShowLocationButton && (
           <Button
             onPress={getCurrentLocation}
             loading={locationLoading}
