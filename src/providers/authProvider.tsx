@@ -22,7 +22,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<UserType>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] =
     useState<Notifications.Notification | null>(null);
@@ -43,7 +42,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         const userData = await updateUserData(firebaseUser.uid);
         if (userData) {
           setUser(userData);
-          setIsLoggedIn(true); // Ensure this is updated too
           console.log("User data:", userData);
           router.replace("/");
         }
@@ -150,7 +148,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           router.replace("/"); // use replace to avoid going back to login
         }
       }
-      setIsLoggedIn(true);
       return { success: true };
     } catch (error: any) {
       return { success: false, msg: parseAuthError(error.message) };

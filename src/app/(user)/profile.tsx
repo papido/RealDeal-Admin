@@ -1,6 +1,7 @@
 import { firestore } from "@/config/firebase";
 import Button from "@/src/components/Button";
 import { useAuth } from "@/src/providers/authProvider";
+import { useCart } from "@/src/providers/CartProvider";
 import * as Location from "expo-location";
 import React, { useState } from "react";
 import {
@@ -23,6 +24,7 @@ const ProfileScreen = () => {
     email: user?.email || "",
     address: user?.address || "",
   });
+  const { getLocation } = useCart();
 
   const updateField = async (field: keyof typeof form) => {
     if (!user?.uid) return;
@@ -60,7 +62,7 @@ const ProfileScreen = () => {
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({});
+      const location = await getLocation();
       const [address] = await Location.reverseGeocodeAsync(location.coords);
 
       const fullAddress = `${address.name}, ${address.street}, ${address.postalCode}, ${address.city}, ${address.region}`;

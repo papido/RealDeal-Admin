@@ -3,6 +3,7 @@ import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
 import dayjs from "dayjs";
 import { randomUUID } from "expo-crypto";
+import * as Location from "expo-location";
 import { router } from "expo-router";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
 import { Alert } from "react-native";
@@ -25,6 +26,8 @@ type CartType = {
   loading: boolean;
   submitPayment: (image: string) => void;
   payment: PaymentType | null;
+  getLocation: () => Promise<Location.LocationObject>;
+  location: Location.LocationObject;
 };
 
 export const CartContext = createContext<CartType>({
@@ -37,6 +40,32 @@ export const CartContext = createContext<CartType>({
   submitPayment: () => {},
   loading: false,
   payment: null,
+  getLocation: async () => {
+    return {
+      coords: {
+        accuracy: 0,
+        altitude: 0,
+        altitudeAccuracy: null,
+        heading: 0,
+        latitude: 0,
+        longitude: 0,
+        speed: 0,
+      },
+      timestamp: Date.now(),
+    };
+  },
+  location: {
+    coords: {
+      accuracy: 0,
+      altitude: 0,
+      altitudeAccuracy: null,
+      heading: 0,
+      latitude: 0,
+      longitude: 0,
+      speed: 0,
+    },
+    timestamp: Date.now(),
+  },
 });
 
 const CartProvider = ({ children }: PropsWithChildren) => {
@@ -45,6 +74,18 @@ const CartProvider = ({ children }: PropsWithChildren) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<PaymentType | null>(null);
+  const [location, setLocation] = useState<Location.LocationObject>({
+    coords: {
+      accuracy: 0,
+      altitude: 0,
+      altitudeAccuracy: null,
+      heading: 0,
+      latitude: 0,
+      longitude: 0,
+      speed: 0,
+    },
+    timestamp: Date.now(),
+  });
 
   const addItem = (product: ProductType, productItem: ProductItem) => {
     const existingItem = items.find(
@@ -157,6 +198,12 @@ const CartProvider = ({ children }: PropsWithChildren) => {
     }
   };
 
+  const getLocation = async (): Promise<Location.LocationObject> => {
+    const location = await Location.getCurrentPositionAsync({});
+    setLocation(location);
+    return location;
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -169,6 +216,8 @@ const CartProvider = ({ children }: PropsWithChildren) => {
         loading,
         submitPayment,
         payment,
+        getLocation,
+        location,
       }}
     >
       {children}

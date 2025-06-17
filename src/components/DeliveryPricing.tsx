@@ -1,5 +1,5 @@
 import * as Location from "expo-location";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useCart } from "../providers/CartProvider";
 import Button from "./Button";
@@ -12,113 +12,195 @@ const STORE_LOCATION = {
 };
 const MAX_DELIVERY_DISTANCE = 25; // km
 
+interface DeliveryInfo {
+  distance: number;
+  fee: number;
+  isWithinRange: boolean;
+}
+
 const DeliveryPricing = () => {
   const [userLocation, setUserLocation] =
     useState<Location.LocationObject | null>(null);
-  const [distance, setDistance] = useState<number>(0);
-  const [deliveryFee, setDeliveryFee] = useState<number>(0);
+  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | null>(null);
   const [locationLoading, setLocationLoading] = useState<boolean>(false);
-  const { total, items } = useCart();
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const { total, items, getLocation, location } = useCart();
 
   // Calculate distance between two coordinates using Haversine formula
-  const calculateDistance = (
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ): number => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
+  const calculateDistance = useCallback(
+    (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    },
+    []
+  );
+
+  // Calculate delivery info from coordinates
+  const calculateDeliveryInfo = useCallback(
+    (coords: Location.LocationObjectCoords): DeliveryInfo => {
+      const distance = calculateDistance(
+        STORE_LOCATION.latitude,
+        STORE_LOCATION.longitude,
+        coords.latitude,
+        coords.longitude
+      );
+
+      const isWithinRange = distance <= MAX_DELIVERY_DISTANCE;
+      const fee = isWithinRange
+        ? BASE_DELIVERY_FEE + distance * DELIVERY_RATE_PER_KM
+        : 0;
+
+      return { distance, fee, isWithinRange };
+    },
+    [calculateDistance]
+  );
+
+  // Process location data
+  const processLocation = useCallback(
+    (locationData: Location.LocationObject) => {
+      try {
+        setUserLocation(locationData);
+        const info = calculateDeliveryInfo(locationData.coords);
+        setDeliveryInfo(info);
+        setLocationError(null);
+
+        if (!info.isWithinRange) {
+          Alert.alert(
+            "Delivery Not Available",
+            `Sorry, we only deliver within ${MAX_DELIVERY_DISTANCE}km of our store. Your location is ${info.distance.toFixed(2)}km away.`
+          );
+        }
+      } catch (error) {
+        console.error("Error processing location:", error);
+        setLocationError("Failed to calculate delivery information");
+      }
+    },
+    [calculateDeliveryInfo]
+  );
 
   // Get user's current location
   const getCurrentLocation = async () => {
     setLocationLoading(true);
+    setLocationError(null);
+
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
+        setLocationError("Location permission denied");
         Alert.alert(
-          "Permission denied",
-          "Permission to access location was denied"
+          "Permission Required",
+          "Please allow location access to calculate delivery fees"
         );
-        setLocationLoading(false);
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({});
-      setUserLocation(location);
+      // Try to use cart's getLocation first, fallback to direct location request
+      let locationData: Location.LocationObject;
 
-      const calculatedDistance = calculateDistance(
-        STORE_LOCATION.latitude,
-        STORE_LOCATION.longitude,
-        location.coords.latitude,
-        location.coords.longitude
-      );
-      setDistance(calculatedDistance);
-      if (calculatedDistance > MAX_DELIVERY_DISTANCE) {
-        Alert.alert(
-          "Delivery Not Available",
-          `Sorry, we only deliver within ${MAX_DELIVERY_DISTANCE}km of our store. Your location is ${calculatedDistance.toFixed(
-            2
-          )}km away.`
-        );
-        setLocationLoading(false);
-        return;
+      if (getLocation) {
+        locationData = await getLocation();
+      } else {
+        locationData = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
       }
-      const calculatedDeliveryFee =
-        BASE_DELIVERY_FEE + calculatedDistance * DELIVERY_RATE_PER_KM;
-      setDeliveryFee(calculatedDeliveryFee);
+
+      processLocation(locationData);
     } catch (error) {
       console.error("Error getting location:", error);
-      Alert.alert("Error", "Failed to get your location");
+      setLocationError("Failed to get your location");
+      Alert.alert(
+        "Location Error",
+        "Unable to get your current location. Please try again."
+      );
     } finally {
       setLocationLoading(false);
     }
   };
 
-  const getTotalPrice = () => {
-    if (!total) return 0;
-    return total + deliveryFee;
+  // Initialize with existing location data
+  useEffect(() => {
+    if (location?.coords && !deliveryInfo) {
+      processLocation(location);
+    }
+  }, [location, deliveryInfo, processLocation]);
+
+  const getTotalPrice = (): number => {
+    if (!total || !deliveryInfo?.isWithinRange) return total || 0;
+    return total + deliveryInfo.fee;
   };
+
+  const hasValidLocation = userLocation || location;
+  const shouldShowDeliveryInfo = deliveryInfo && deliveryInfo.isWithinRange;
+
   return (
     <>
       {/* Location and Delivery Section */}
       <View style={styles.deliverySection}>
-        {!userLocation && (
+        {!hasValidLocation && (
           <Button
             onPress={getCurrentLocation}
             loading={locationLoading}
             style={styles.locationButton}
           >
             <Text style={styles.locationButtonText}>
-              {userLocation ? "Update Location" : "Get My Location"}
+              {locationLoading
+                ? "Getting Location..."
+                : "Get Location for Delivery"}
             </Text>
           </Button>
         )}
 
-        {userLocation && (
+        {locationError && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{locationError}</Text>
+            <Button
+              onPress={getCurrentLocation}
+              loading={locationLoading}
+              style={styles.retryButton}
+            >
+              <Text style={styles.locationButtonText}>Retry</Text>
+            </Button>
+          </View>
+        )}
+
+        {shouldShowDeliveryInfo && (
           <View style={styles.deliveryInfo}>
             <Text style={styles.deliveryText}>
-              Distance: {distance.toFixed(2)} km
+              Distance: {deliveryInfo.distance.toFixed(2)} km
             </Text>
             <Text style={styles.deliveryText}>
               Base delivery fee: RM{BASE_DELIVERY_FEE.toFixed(2)}
             </Text>
             <Text style={styles.deliveryText}>
-              Distance charge: RM{(distance * DELIVERY_RATE_PER_KM).toFixed(2)}{" "}
-              ({distance.toFixed(2)} km × RM{DELIVERY_RATE_PER_KM})
+              Distance charge: RM
+              {(deliveryInfo.distance * DELIVERY_RATE_PER_KM).toFixed(2)} (
+              {deliveryInfo.distance.toFixed(2)} km × RM{DELIVERY_RATE_PER_KM})
             </Text>
             <Text style={styles.deliveryTotal}>
-              Total delivery: RM{deliveryFee.toFixed(2)}
+              Total delivery: RM{deliveryInfo.fee.toFixed(2)}
+            </Text>
+          </View>
+        )}
+
+        {deliveryInfo && !deliveryInfo.isWithinRange && (
+          <View style={styles.outOfRangeContainer}>
+            <Text style={styles.outOfRangeText}>
+              Delivery not available to your location (
+              {deliveryInfo.distance.toFixed(2)} km away)
+            </Text>
+            <Text style={styles.outOfRangeSubtext}>
+              We deliver within {MAX_DELIVERY_DISTANCE} km only
             </Text>
           </View>
         )}
@@ -128,7 +210,7 @@ const DeliveryPricing = () => {
       {items && items.length > 0 && (
         <View style={styles.pricingSection}>
           <Text style={styles.itemPrice}>
-            Item: RM
+            Items: RM
             {items
               .reduce(
                 (sum, item) => sum + item.productItem.price * item.quantity,
@@ -136,15 +218,20 @@ const DeliveryPricing = () => {
               )
               .toFixed(2)}
           </Text>
-          {deliveryFee > 0 && (
+          {shouldShowDeliveryInfo && (
             <>
               <Text style={styles.deliveryPrice}>
-                Delivery: RM{deliveryFee.toFixed(2)}
+                Delivery: RM{deliveryInfo.fee.toFixed(2)}
               </Text>
               <Text style={styles.totalPrice}>
                 Total: RM{getTotalPrice().toFixed(2)}
               </Text>
             </>
+          )}
+          {deliveryInfo && !deliveryInfo.isWithinRange && (
+            <Text style={styles.pickupOnlyText}>
+              Pickup only - delivery not available
+            </Text>
           )}
         </View>
       )}
@@ -175,10 +262,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
+  retryButton: {
+    backgroundColor: "#28a745",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 0,
+  },
   locationButtonText: {
     color: "#ffffff",
     fontSize: 15,
     fontWeight: "600",
+  },
+  errorContainer: {
+    backgroundColor: "#fff5f5",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#fed7d7",
+  },
+  errorText: {
+    color: "#e53e3e",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 8,
   },
   deliveryInfo: {
     gap: 6,
@@ -197,6 +306,25 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: "#d0d0d0",
+  },
+  outOfRangeContainer: {
+    backgroundColor: "#fff3cd",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ffeaa7",
+  },
+  outOfRangeText: {
+    color: "#856404",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  outOfRangeSubtext: {
+    color: "#856404",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
   },
   pricingSection: {
     padding: 16,
@@ -224,5 +352,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: "#ccc",
+  },
+  pickupOnlyText: {
+    fontSize: 14,
+    color: "#856404",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 8,
   },
 });
