@@ -104,18 +104,18 @@ const ProfileScreen = () => {
   };
 
   // Function to recalculate delivery for current address
-  const recalculateDeliveryOnly = async () => {
-    if (user?.address) {
-      try {
-        await calculateDeliveryFromAddress(user.address);
-        Alert.alert("Success", "Delivery information updated!");
-      } catch (error) {
-        Alert.alert("Error", "Failed to calculate delivery. Please try again.");
-      }
-    } else {
-      Alert.alert("No Address", "Please set your address first.");
-    }
-  };
+  // const recalculateDeliveryOnly = async () => {
+  //   if (user?.address) {
+  //     try {
+  //       await calculateDeliveryFromAddress(user.address);
+  //       Alert.alert("Success", "Delivery information updated!");
+  //     } catch (error) {
+  //       Alert.alert("Error", "Failed to calculate delivery. Please try again.");
+  //     }
+  //   } else {
+  //     Alert.alert("No Address", "Please set your address first.");
+  //   }
+  // };
 
   return (
     <View style={styles.container}>
