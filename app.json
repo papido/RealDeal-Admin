@@ -28,7 +28,12 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-notifications"],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/iconImage.jpg"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -37,11 +42,20 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/messaging",
+        {
+          "ios": {
+            "useFrameworkSystemDefault": false
+          }
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
-      "tsconfigPath": true
+      "tsconfigPaths": true
     },
     "extra": {
       "router": {},

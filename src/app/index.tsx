@@ -5,8 +5,21 @@ import Button from "../components/Button";
 import TestPushNotification from "./testPushNotification";
 
 const Index = () => {
+  // const { user } = useAuth();
+
+  // if (user) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+  //       <Text>Welcome {user.username || user.phoneNumber}</Text>
+  //     </View>
+  //   );
+  // }
+
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 10 }}>
+    <View style={{ flex: 1, justifyContent: "center" }}>
+      <Text style={{ textAlign: "center", fontSize: 24, marginBottom: 30 }}>
+        Choose Authentication Method
+      </Text>
       <Button onPress={() => router.push("/(user)/menu")}>
         <Text style={{ color: "white" }}>User</Text>
       </Button>

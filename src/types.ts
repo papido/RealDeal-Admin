@@ -85,6 +85,7 @@ export type UserType = {
   username: string;
   image?: any;
   address?: string;
+  phoneNumber: string;
 } | null;
 
 export type ResponseType = {
@@ -111,6 +112,14 @@ export interface AuthContextType {
   notification?: Notifications.Notification | null;
   error?: Error | null;
   isLoading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  // signInWithPhoneNumber: () => Promise<void>;
+  // confirmCode: () => Promise<void>;
+  // confirm: FirebaseAuthTypes.ConfirmationResult | null;
+  phoneNumber: string;
+  setPhoneNumber: (phoneNumber: string) => void;
+  code: string;
+  setCode: (code: string) => void;
 }
 
 export type PaymentType = {

@@ -13,6 +13,7 @@ import React, {
 
 import { AuthContextType, UserType } from "@/src/types";
 import { registerForPushNotificationsAsync } from "@/utils/registerForPushNotificationsAsync";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Alert } from "react-native";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,8 +34,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const responseListener = useRef<ReturnType<
     typeof Notifications.addNotificationResponseReceivedListener
   > | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [code, setCode] = useState("");
+  // const [confirm, setConfirm] =
+  //   useState<FirebaseAuthTypes.ConfirmationResult | null>(null);
 
   const router = useRouter();
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId:
+        "39342535560-pv5jqk7rpdhtc11s3mpv899p0r2jten6.apps.googleusercontent.com",
+    });
+  }, []);
 
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
@@ -135,6 +147,76 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setNotification(null);
   };
 
+  //Phone Auth
+  // const signInWithPhoneNumber = async () => {
+  //   try {
+  //     const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
+  //     setConfirm(confirmation);
+  //     Alert.alert("Code Sent", "Verification code sent to your phone");
+  //   } catch (error) {
+  //     console.error("Phone Auth Error:", error);
+  //     Alert.alert("Error", "Failed to send verification code");
+  //   }
+  // };
+  // const confirmCode = async () => {
+  //   try {
+  //     const userCredential = await confirm?.confirm(code);
+  //     console.log("User signed in with phone:", userCredential?.user);
+  //     Alert.alert("Success", "Phone number verified successfully");
+  //   } catch (error) {
+  //     console.error("Invalid code:", error);
+  //     Alert.alert("Error", "Invalid verification code");
+  //   }
+  // };
+
+  //Google Auth
+  const signInWithGoogle = async () => {
+    try {
+      // Check if device supports Google Play
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
+
+      // Get the user's ID token
+      const signInResult = await GoogleSignin.signIn();
+      const idToken = signInResult.data?.idToken;
+
+      if (!idToken) {
+        throw new Error("No ID token received from Google Sign-In");
+      }
+
+      // Create a Google credential with the token
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+
+      // Sign-in the user with the credential
+      const userCredential =
+        await auth().signInWithCredential(googleCredential);
+      console.log("User signed in with Google:", userCredential.user);
+
+      await firestore().collection("users").doc(userCredential.user.uid).set({
+        username: userCredential.user.displayName,
+        email: userCredential.user.email,
+        uid: userCredential.user.uid,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        address: "",
+      });
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      Alert.alert("Error", "Google Sign-In failed");
+    }
+
+    const currentUser = auth().currentUser;
+    if (currentUser) {
+      const userData = await updateUserData(currentUser.uid);
+      if (userData) {
+        setUser(userData);
+        await setupNotifications(currentUser.uid);
+        router.replace("/"); // use replace to avoid going back to login
+      }
+    }
+  };
+
+  //Email Auth
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -191,8 +273,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const logout = async () => {
-    await auth().signOut();
-    router.push("/(auth)/sign-in");
+    try {
+      await GoogleSignin.signOut();
+      await auth().signOut();
+      router.push("/(auth)/sign-in");
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
 
   const updateUserData = async (uid: string): Promise<UserType | null> => {
@@ -205,6 +292,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         username: data?.username || null,
         image: data?.image || null,
         address: data?.address || null,
+        phoneNumber: data?.phoneNumber || null,
       };
     } catch (error) {
       console.error("Failed to update user data:", error);
@@ -236,6 +324,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     notification,
     error,
     isLoading,
+    signInWithGoogle,
+    // signInWithPhoneNumber,
+    // confirmCode,
+    // confirm,
+    phoneNumber,
+    setPhoneNumber,
+    code,
+    setCode,
   };
 
   return (

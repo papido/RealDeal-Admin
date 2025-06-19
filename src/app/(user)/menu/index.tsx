@@ -8,13 +8,10 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 
 const MenuScreen = () => {
   const { user } = useAuth();
-  const { data: products, loading } = useFetchData<ProductType>(
-    "products",
-    (ref) => {
-      if (!user?.uid) return ref; // Or return null to skip the query altogether
-      return ref.where("uid", "==", user.uid).orderBy("createdAt", "desc");
-    }
-  );
+  const { data: products } = useFetchData<ProductType>("products", (ref) => {
+    if (!user?.uid) return ref; // Or return null to skip the query altogether
+    return ref.where("uid", "==", user.uid).orderBy("createdAt", "desc");
+  });
 
   return (
     <>

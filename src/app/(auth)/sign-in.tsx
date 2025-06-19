@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import Button from "../../components/Button";
@@ -17,7 +18,7 @@ const SignInScreen = () => {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, signInWithGoogle } = useAuth();
 
   const validateInput = () => {
     setErrors("");
@@ -76,6 +77,22 @@ const SignInScreen = () => {
       <Link href="/sign-up" style={styles.text}>
         Create an account
       </Link>
+
+      <TouchableOpacity
+        onPress={signInWithGoogle}
+        style={{
+          backgroundColor: "#4285F4",
+          padding: 15,
+          borderRadius: 8,
+          marginBottom: 10,
+        }}
+      >
+        <Text
+          style={{ color: "white", textAlign: "center", fontWeight: "bold" }}
+        >
+          Sign in with Google
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };

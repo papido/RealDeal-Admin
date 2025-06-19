@@ -201,9 +201,21 @@ const ProfileScreen = () => {
         </TouchableOpacity>
       )} */}
 
-      <Button onPress={logout}>
-        <Text>Sign Out</Text>
-      </Button>
+      <TouchableOpacity
+        onPress={logout}
+        style={{
+          marginTop: 16,
+          backgroundColor: "#f44336",
+          padding: 15,
+          borderRadius: 8,
+        }}
+      >
+        <Text
+          style={{ color: "white", textAlign: "center", fontWeight: "bold" }}
+        >
+          Sign Out
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };

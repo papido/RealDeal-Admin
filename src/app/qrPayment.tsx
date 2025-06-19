@@ -38,7 +38,7 @@ const UploadPaymentScreen = () => {
         <Text style={styles.label}>Date & Time: {order.deliveryDateTime}</Text>
         <Text style={styles.label}>Scan this QR with Maybank App:</Text>
         <Image
-          source={require("@/assets/images/exampleQR.jpeg")}
+          source={require("@assets/images/exampleQR.jpeg")}
           style={styles.image}
         />
         <Text style={styles.label}>Upload Payment Proof Below:</Text>
