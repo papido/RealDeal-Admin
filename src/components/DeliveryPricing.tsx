@@ -1,183 +1,110 @@
-import * as Location from "expo-location";
-import React, { useCallback, useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
-import { useAuth } from "../providers/authProvider";
+import React, { useEffect } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { useCart } from "../providers/CartProvider";
+import { useAuth } from "../providers/authProvider";
 import Button from "./Button";
 
 const DELIVERY_RATE_PER_KM = 2.5; // RM 2.50 per km
-const BASE_DELIVERY_FEE = 5.0; // RM 5.00 base fee
-const STORE_LOCATION = {
-  latitude: 3.0738, // Replace with your store's coordinates
-  longitude: 101.5183, // Klang, Selangor coordinates as example
-};
+// const BASE_DELIVERY_FEE = 0.0; // RM 0.00 base fee
 const MAX_DELIVERY_DISTANCE = 25; // km
 
-interface DeliveryInfo {
-  distance: number;
-  fee: number;
-  isWithinRange: boolean;
-}
-
 const DeliveryPricing = () => {
-  const [userLocation, setUserLocation] =
-    useState<Location.LocationObject | null>(null);
-  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo | null>(null);
-  const [locationLoading, setLocationLoading] = useState<boolean>(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const {
+    items,
+    total,
+    deliveryInfo,
+    locationLoading,
+    locationError,
+    calculateDeliveryForCurrentLocation,
+    calculateDeliveryFromAddress,
+    getTotalWithDelivery,
+    location,
+    clearDeliveryInfo, // Make sure this is available from your updated CartProvider
+  } = useCart();
 
-  const { total, items, getLocation, location } = useCart();
   const { user } = useAuth();
 
-  // Calculate distance between two coordinates using Haversine formula
-  const calculateDistance = useCallback(
-    (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-      const R = 6371; // Earth's radius in kilometers
-      const dLat = ((lat2 - lat1) * Math.PI) / 180;
-      const dLon = ((lon2 - lon1) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((lat1 * Math.PI) / 180) *
-          Math.cos((lat2 * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    },
-    []
-  );
-
-  // Calculate delivery info from coordinates
-  const calculateDeliveryInfo = useCallback(
-    (coords: Location.LocationObjectCoords): DeliveryInfo => {
-      // Validate coordinates before calculation
-      if (
-        !coords.latitude ||
-        !coords.longitude ||
-        coords.latitude === 0 ||
-        coords.longitude === 0 ||
-        Math.abs(coords.latitude) > 90 ||
-        Math.abs(coords.longitude) > 180
-      ) {
-        throw new Error("Invalid coordinates provided");
-      }
-
-      const distance = calculateDistance(
-        STORE_LOCATION.latitude,
-        STORE_LOCATION.longitude,
-        coords.latitude,
-        coords.longitude
-      );
-
-      const isWithinRange = distance <= MAX_DELIVERY_DISTANCE;
-      const fee = isWithinRange
-        ? BASE_DELIVERY_FEE + distance * DELIVERY_RATE_PER_KM
-        : 0;
-
-      return { distance, fee, isWithinRange };
-    },
-    [calculateDistance]
-  );
-
-  // Process location data
-  const processLocation = useCallback(
-    (locationData: Location.LocationObject) => {
-      try {
-        setUserLocation(locationData);
-        const info = calculateDeliveryInfo(locationData.coords);
-        setDeliveryInfo(info);
-        setLocationError(null);
-
-        if (!info.isWithinRange) {
-          Alert.alert(
-            "Delivery Not Available",
-            `Sorry, we only deliver within ${MAX_DELIVERY_DISTANCE}km of our store. Your location is ${info.distance.toFixed(2)}km away.`
-          );
-        }
-      } catch (error) {
-        console.error("Error processing location:", error);
-        setLocationError("Failed to calculate delivery information");
-      }
-    },
-    [calculateDeliveryInfo]
-  );
-
-  // Get user's current location
-  const getCurrentLocation = async () => {
-    setLocationLoading(true);
-    setLocationError(null);
-
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setLocationError("Location permission denied");
-        Alert.alert(
-          "Permission Required",
-          "Please allow location access to calculate delivery fees"
-        );
-        return;
-      }
-
-      // Try to use cart's getLocation first, fallback to direct location request
-      let locationData: Location.LocationObject;
-
-      if (getLocation) {
-        locationData = await getLocation();
-      } else {
-        locationData = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-      }
-
-      processLocation(locationData);
-    } catch (error) {
-      console.error("Error getting location:", error);
-      setLocationError("Failed to get your location");
-      Alert.alert(
-        "Location Error",
-        "Unable to get your current location. Please try again."
-      );
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
-  // Initialize with existing location data
+  // Debug effect to log current state
   useEffect(() => {
-    if (location?.coords && !deliveryInfo) {
-      // Only process if we have valid coordinates
-      if (location.coords.latitude && location.coords.longitude) {
-        processLocation(location);
-      }
-    }
-  }, [location, deliveryInfo, processLocation]);
+    console.log("=== DeliveryPricing Debug Info ===");
+    console.log("User address:", user?.address);
+    console.log("Has deliveryInfo:", !!deliveryInfo);
+    console.log("DeliveryInfo:", deliveryInfo);
+    console.log("Current location:", location);
+    console.log("================================");
+  }, [user?.address, deliveryInfo, location]);
 
-  const getTotalPrice = (): number => {
-    if (!total || !deliveryInfo?.isWithinRange) return total || 0;
-    return total + deliveryInfo.fee;
+  // Always check if we need to calculate delivery
+  const hasDeliveryInfo = !!deliveryInfo;
+  const hasUserAddress = !!(user?.address && user.address.trim() !== "");
+
+  // Show location button if no delivery info exists
+  const shouldShowLocationButton = !hasDeliveryInfo && !locationLoading;
+
+  // Show delivery info if it exists
+  const shouldShowDeliveryInfo = hasDeliveryInfo && deliveryInfo.isWithinRange;
+
+  const handleCalculateDelivery = async () => {
+    try {
+      if (hasUserAddress) {
+        console.log("Calculating delivery from user address:", user.address);
+        await calculateDeliveryFromAddress(user?.address!);
+      } else {
+        console.log("No user address found, using current location");
+        await calculateDeliveryForCurrentLocation();
+      }
+    } catch (error) {
+      console.error("Error calculating delivery:", error);
+    }
   };
 
-  const hasValidLocation =
-    (userLocation?.coords?.latitude && userLocation?.coords?.longitude) ||
-    (location?.coords?.latitude && location?.coords?.longitude);
-  const shouldShowDeliveryInfo = deliveryInfo && deliveryInfo.isWithinRange;
-  const shouldShowLocationButton =
-    !hasValidLocation || (!deliveryInfo && hasValidLocation);
+  const handleClearDelivery = () => {
+    console.log("Clearing delivery info");
+    if (clearDeliveryInfo) {
+      clearDeliveryInfo();
+    }
+  };
 
   return (
     <>
+      {/* Debug Info (Remove this in production) */}
+      {/* <View style={styles.debugSection}>
+        <Text style={styles.debugTitle}>Debug Info:</Text>
+        <Text style={styles.debugText}>
+          User Address: {hasUserAddress ? "Set" : "Not Set"}
+        </Text>
+        <Text style={styles.debugText}>
+          Address Value: {user?.address || "null"}
+        </Text>
+        <Text style={styles.debugText}>
+          Has Delivery Info: {hasDeliveryInfo ? "Yes" : "No"}
+        </Text>
+        {deliveryInfo && (
+          <Text style={styles.debugText}>
+            Distance: {deliveryInfo.distance.toFixed(2)} km
+          </Text>
+        )}
+        {hasDeliveryInfo && (
+          <Button onPress={handleClearDelivery} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>Clear Delivery Info</Text>
+          </Button>
+        )}
+      </View> */}
+
       {/* Location and Delivery Section */}
       <View style={styles.deliverySection}>
         {shouldShowLocationButton && (
           <Button
-            onPress={getCurrentLocation}
+            onPress={handleCalculateDelivery}
             loading={locationLoading}
             style={styles.locationButton}
           >
             <Text style={styles.locationButtonText}>
               {locationLoading
-                ? "Getting Location..."
-                : "Get Location for Delivery"}
+                ? "Calculating..."
+                : hasUserAddress
+                  ? "Calculate Delivery Fee"
+                  : "Get Location & Calculate Delivery"}
             </Text>
           </Button>
         )}
@@ -186,7 +113,7 @@ const DeliveryPricing = () => {
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{locationError}</Text>
             <Button
-              onPress={getCurrentLocation}
+              onPress={handleCalculateDelivery}
               loading={locationLoading}
               style={styles.retryButton}
             >
@@ -197,11 +124,13 @@ const DeliveryPricing = () => {
 
         {shouldShowDeliveryInfo && (
           <View style={styles.deliveryInfo}>
-            <Text style={styles.deliveryText}>
-              Distance: {deliveryInfo.distance.toFixed(2)} km
+            <Text style={styles.deliverySourceText}>
+              {hasUserAddress
+                ? "📍 From saved address"
+                : "📍 From current location"}
             </Text>
             <Text style={styles.deliveryText}>
-              Base delivery fee: RM{BASE_DELIVERY_FEE.toFixed(2)}
+              Distance: {deliveryInfo.distance.toFixed(2)} km
             </Text>
             <Text style={styles.deliveryText}>
               Distance charge: RM
@@ -223,6 +152,11 @@ const DeliveryPricing = () => {
             <Text style={styles.outOfRangeSubtext}>
               We deliver within {MAX_DELIVERY_DISTANCE} km only
             </Text>
+            <Text style={styles.deliverySourceText}>
+              {hasUserAddress
+                ? "Based on saved address"
+                : "Based on current location"}
+            </Text>
           </View>
         )}
       </View>
@@ -239,16 +173,26 @@ const DeliveryPricing = () => {
               )
               .toFixed(2)}
           </Text>
+          {/* Show delivery fee if delivery info exists */}
           {shouldShowDeliveryInfo && (
             <>
               <Text style={styles.deliveryPrice}>
                 Delivery: RM{deliveryInfo.fee.toFixed(2)}
               </Text>
               <Text style={styles.totalPrice}>
-                Total: RM{getTotalPrice().toFixed(2)}
+                Total: RM{getTotalWithDelivery().toFixed(2)}
               </Text>
             </>
           )}
+
+          {/* Show simple total if no delivery info yet */}
+          {!hasDeliveryInfo && (
+            <Text style={styles.totalPrice}>
+              Subtotal: RM{total.toFixed(2)}
+            </Text>
+          )}
+
+          {/* Show pickup only if delivery not available */}
           {deliveryInfo && !deliveryInfo.isWithinRange && (
             <Text style={styles.pickupOnlyText}>
               Pickup only - delivery not available
@@ -263,6 +207,38 @@ const DeliveryPricing = () => {
 export default DeliveryPricing;
 
 const styles = StyleSheet.create({
+  debugSection: {
+    padding: 12,
+    backgroundColor: "#f0f8ff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#b3d9ff",
+    marginBottom: 12,
+  },
+  debugTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#0066cc",
+    marginBottom: 6,
+  },
+  debugText: {
+    fontSize: 12,
+    color: "#0066cc",
+    marginBottom: 2,
+  },
+  clearButton: {
+    backgroundColor: "#ff6b6b",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  clearButtonText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
   deliverySection: {
     padding: 16,
     backgroundColor: "#ffffff",
@@ -312,6 +288,12 @@ const styles = StyleSheet.create({
   },
   deliveryInfo: {
     gap: 6,
+  },
+  deliverySourceText: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
+    marginBottom: 4,
   },
   deliveryText: {
     fontSize: 14,

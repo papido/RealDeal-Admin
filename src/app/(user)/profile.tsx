@@ -24,7 +24,7 @@ const ProfileScreen = () => {
     email: user?.email || "",
     address: user?.address || "",
   });
-  const { getLocation } = useCart();
+  const { getLocation, calculateDeliveryFromAddress, cartItems } = useCart();
 
   const updateField = async (field: keyof typeof form) => {
     if (!user?.uid) return;
@@ -48,8 +48,8 @@ const ProfileScreen = () => {
     setEditingField(field);
   };
 
-  // Get user's current location
-  const getCurrentLocation = async () => {
+  // Combined function to update address and recalculate delivery
+  const updateAddressAndDelivery = async () => {
     setLocationLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -64,19 +64,57 @@ const ProfileScreen = () => {
 
       const location = await getLocation();
       const [address] = await Location.reverseGeocodeAsync(location.coords);
-
       const fullAddress = `${address.name}, ${address.street}, ${address.postalCode}, ${address.city}, ${address.region}`;
 
+      // Update user address in Firestore
       await firestore().collection("users").doc(user?.uid).update({
         address: fullAddress,
       });
 
+      // Update local user data
       const updated = await updateUserData(user?.uid!);
       setUser(updated);
+
+      // Calculate delivery for the new address
+      let deliveryMessage = "Address updated successfully!";
+
+      try {
+        await calculateDeliveryFromAddress(fullAddress);
+
+        // Check if user has items in cart to provide appropriate feedback
+        if (cartItems && cartItems.length > 0) {
+          deliveryMessage +=
+            " Delivery information has been calculated for your cart items.";
+        } else {
+          deliveryMessage +=
+            " Delivery rates are ready for when you add items to your cart.";
+        }
+      } catch (deliveryError) {
+        console.error("Error calculating delivery:", deliveryError);
+        deliveryMessage +=
+          " However, there was an issue calculating delivery rates. You can recalculate them later.";
+      }
+
+      Alert.alert("Success", deliveryMessage);
     } catch (error) {
       console.error("Error getting location:", error);
+      Alert.alert("Error", "Failed to get location. Please try again.");
     }
     setLocationLoading(false);
+  };
+
+  // Function to recalculate delivery for current address
+  const recalculateDeliveryOnly = async () => {
+    if (user?.address) {
+      try {
+        await calculateDeliveryFromAddress(user.address);
+        Alert.alert("Success", "Delivery information updated!");
+      } catch (error) {
+        Alert.alert("Error", "Failed to calculate delivery. Please try again.");
+      }
+    } else {
+      Alert.alert("No Address", "Please set your address first.");
+    }
   };
 
   return (
@@ -128,34 +166,40 @@ const ProfileScreen = () => {
       {/* Address */}
       <Text style={styles.label}>Address</Text>
       {user?.address ? (
-        editingField === "address" ? (
-          <View style={styles.row}>
-            <TextInput
-              style={styles.input}
-              value={form.address}
-              onChangeText={(text) => setForm({ ...form, address: text })}
-            />
-            <Button onPress={() => updateField("address")}>
-              <Text>Save</Text>
-            </Button>
-          </View>
-        ) : (
-          <View style={styles.row}>
-            <Text>{user?.address}</Text>
-            <TouchableOpacity onPress={() => handleEdit("address")}>
-              <Text style={styles.edit}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-        )
+        <View style={styles.row}>
+          <Text style={styles.addressInRow}>{user.address}</Text>
+          <TouchableOpacity
+            onPress={updateAddressAndDelivery}
+            disabled={locationLoading}
+          >
+            <Text style={[styles.edit, locationLoading && styles.editDisabled]}>
+              {locationLoading ? "Updating..." : "Update"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       ) : (
-        <Button
-          onPress={getCurrentLocation}
-          loading={locationLoading}
-          style={styles.locationButton}
-        >
-          <Text>Get Location</Text>
-        </Button>
+        <View style={styles.row}>
+          <Text style={styles.noAddressInRow}>No address set</Text>
+          <TouchableOpacity
+            onPress={updateAddressAndDelivery}
+            disabled={locationLoading}
+          >
+            <Text style={[styles.edit, locationLoading && styles.editDisabled]}>
+              {locationLoading ? "Setting..." : "Set Address"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
+
+      {/* Optional: Keep a separate button for recalculating delivery without updating address
+      {user?.address && (
+        <TouchableOpacity
+          onPress={recalculateDeliveryOnly}
+          style={styles.recalculateButton}
+        >
+          <Text style={styles.recalculateText}>Recalculate Delivery Only</Text>
+        </TouchableOpacity>
+      )} */}
 
       <Button onPress={logout}>
         <Text>Sign Out</Text>
@@ -192,12 +236,30 @@ const styles = StyleSheet.create({
     color: "#007bff",
     marginLeft: 8,
   },
-  locationButton: {
-    backgroundColor: "#007bff",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  editDisabled: {
+    color: "#ccc",
+  },
+  addressInRow: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+    marginRight: 8,
+  },
+  noAddressInRow: {
+    flex: 1,
+    fontSize: 16,
+    color: "#666",
+    fontStyle: "italic",
+    marginRight: 8,
+  },
+  recalculateButton: {
+    marginTop: 8,
+    paddingVertical: 8,
     alignItems: "center",
-    marginBottom: 12,
+  },
+  recalculateText: {
+    color: "#28a745",
+    fontSize: 14,
+    textDecorationLine: "underline",
   },
 });

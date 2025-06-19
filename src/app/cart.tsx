@@ -26,7 +26,7 @@ const CartScreen = () => {
         <Text style={styles.emptyCartText}>Your cart is empty.</Text>
       ) : (
         <>
-          {/* All Cart Items (no FlatList) */}
+          {/* All Cart Items */}
           <View style={styles.cartList}>
             {items.map((item, index) => (
               <CartListItem key={index} cartItem={item} />
@@ -43,6 +43,7 @@ const CartScreen = () => {
             {/* Delivery Pricing and Checkout */}
             <View style={styles.totalSection}>
               <DeliveryPricing />
+
               <Button
                 onPress={() => checkout(selectedDateTime)}
                 loading={loading}
@@ -60,7 +61,6 @@ const CartScreen = () => {
 };
 
 export default CartScreen;
-
 const styles = StyleSheet.create({
   container: {
     padding: 10,
