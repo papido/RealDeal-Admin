@@ -1,4 +1,5 @@
 import CartProvider from "@/src/providers/CartProvider";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
 import "config/firebase.ts";
 import * as Font from "expo-font";
@@ -6,7 +7,7 @@ import * as Notifications from "expo-notifications";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { AuthProvider } from "../providers/authProvider";
+import { AuthProvider, useAuth } from "../providers/authProvider";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -19,6 +20,41 @@ Notifications.setNotificationHandler({
 
 //Prevent splash screen from hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Create a separate component that uses useAuth
+const AppLayout = () => {
+  const { user } = useAuth(); // Now this is within AuthProvider
+  const isLoggedIn = !!user;
+
+  return (
+    <>
+      <StatusBar style="dark" />
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Protected guard={!isLoggedIn}>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </Stack.Protected>
+        <Stack.Protected guard={isLoggedIn}>
+          <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+          <Stack.Screen name="(user)" options={{ headerShown: false }} />
+        </Stack.Protected>
+        <Stack.Screen
+          name="cart"
+          options={{ title: "Cart", presentation: "modal" }}
+        />
+        <Stack.Screen
+          name="qrPayment"
+          options={{
+            title: "Order Summary & Payment",
+            presentation: "modal",
+            headerLeft: () => null,
+            headerBackVisible: false,
+          }}
+        />
+      </Stack>
+    </>
+  );
+};
 
 const RootLayout = () => {
   const [loaded] = Font.useFonts({
@@ -49,26 +85,9 @@ const RootLayout = () => {
   return (
     <AuthProvider>
       <CartProvider>
-        <StatusBar style="dark" />
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(admin)" options={{ headerShown: false }} />
-          <Stack.Screen name="(user)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="cart"
-            options={{ title: "Cart", presentation: "modal" }}
-          />
-          <Stack.Screen
-            name="qrPayment"
-            options={{
-              title: "Order Summary & Payment",
-              presentation: "modal",
-              headerLeft: () => null,
-              headerBackVisible: false,
-            }}
-          />
-        </Stack>
+        <ActionSheetProvider>
+          <AppLayout />
+        </ActionSheetProvider>
       </CartProvider>
     </AuthProvider>
   );

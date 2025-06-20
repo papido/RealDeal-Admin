@@ -54,12 +54,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         const userData = await updateUserData(firebaseUser.uid);
         if (userData) {
           setUser(userData);
+          if (!expoPushToken) {
+            await setupNotifications(firebaseUser.uid);
+          }
           console.log("User data:", userData);
-          router.replace("/");
+          router.replace("/(user)/menu");
         }
       } else {
         setUser(null);
-        console.log("User logged out"); // Log when user is null
+        console.log("User logged out", user);
         cleanupNotifications();
       }
       setIsLoading(false);
@@ -172,6 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   //Google Auth
   const signInWithGoogle = async () => {
     try {
+      setIsLoading(true);
       // Check if device supports Google Play
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
@@ -193,26 +197,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         await auth().signInWithCredential(googleCredential);
       console.log("User signed in with Google:", userCredential.user);
 
-      await firestore().collection("users").doc(userCredential.user.uid).set({
-        username: userCredential.user.displayName,
-        email: userCredential.user.email,
-        uid: userCredential.user.uid,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        address: "",
-      });
+      await firestore().collection("users").doc(userCredential.user.uid).set(
+        {
+          username: userCredential.user.displayName,
+          email: userCredential.user.email,
+          uid: userCredential.user.uid,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          address: "",
+        },
+        { merge: true }
+      );
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       Alert.alert("Error", "Google Sign-In failed");
-    }
-
-    const currentUser = auth().currentUser;
-    if (currentUser) {
-      const userData = await updateUserData(currentUser.uid);
-      if (userData) {
-        setUser(userData);
-        await setupNotifications(currentUser.uid);
-        router.replace("/"); // use replace to avoid going back to login
-      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -221,15 +220,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     try {
       setIsLoading(true);
       await auth().signInWithEmailAndPassword(email, password);
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        const userData = await updateUserData(currentUser.uid);
-        if (userData) {
-          setUser(userData);
-          await setupNotifications(currentUser.uid);
-          router.replace("/"); // use replace to avoid going back to login
-        }
-      }
+      console.log("✅ Email login successful");
       return { success: true };
     } catch (error: any) {
       return { success: false, msg: parseAuthError(error.message) };
@@ -276,7 +267,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     try {
       await GoogleSignin.signOut();
       await auth().signOut();
-      router.push("/(auth)/sign-in");
+      router.replace("/(auth)/sign-in");
     } catch (error) {
       console.error("Sign out error:", error);
     }
