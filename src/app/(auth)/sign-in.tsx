@@ -1,7 +1,9 @@
+import { auth } from "@/config/firebase";
 import { colors } from "@/src/constants/theme";
 import { useAuth } from "@/src/providers/authProvider";
+import { Feather } from "@expo/vector-icons";
 import { Link, Stack } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -19,6 +21,19 @@ const SignInScreen = () => {
   const [errors, setErrors] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, signInWithGoogle } = useAuth();
+  const [showResend, setShowResend] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (cooldown > 0) {
+      interval = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const validateInput = () => {
     setErrors("");
@@ -44,7 +59,10 @@ const SignInScreen = () => {
     const res = await login(trimmedEmail, trimmedPassword);
     setLoading(false);
     if (!res.success) {
-      Alert.alert("Sign up", res.msg);
+      if (res.msg?.includes("verify your email")) {
+        setShowResend(true);
+      }
+      Alert.alert("Sign in", res.msg);
     }
   };
 
@@ -58,16 +76,34 @@ const SignInScreen = () => {
         onChangeText={setEmail}
         placeholder="jon@gmail.com"
         style={styles.input}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <Text style={styles.label}>Password</Text>
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder=""
-        style={styles.input}
-        secureTextEntry
-      />
+      <View style={{ position: "relative" }}>
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder=""
+          style={[styles.input, { paddingRight: 40 }]}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity
+          onPress={() => setShowPassword(!showPassword)}
+          style={{
+            position: "absolute",
+            right: 10,
+            top: 15,
+          }}
+        >
+          <Feather
+            name={showPassword ? "eye" : "eye-off"}
+            size={20}
+            color="gray"
+          />
+        </TouchableOpacity>
+      </View>
 
       <Text style={{ color: "red" }}>{errors}</Text>
 
@@ -84,7 +120,7 @@ const SignInScreen = () => {
           backgroundColor: "#4285F4",
           padding: 15,
           borderRadius: 8,
-          marginBottom: 10,
+          margin: 10,
         }}
       >
         <Text
@@ -93,6 +129,57 @@ const SignInScreen = () => {
           Sign in with Google
         </Text>
       </TouchableOpacity>
+
+      {showResend && (
+        <TouchableOpacity
+          disabled={cooldown > 0}
+          onPress={async () => {
+            try {
+              const tempUser = await auth().signInWithEmailAndPassword(
+                email.trim(),
+                password.trim()
+              );
+
+              if (tempUser.user.emailVerified) {
+                Alert.alert(
+                  "Already Verified",
+                  "Your email is already verified."
+                );
+              } else {
+                await tempUser.user.sendEmailVerification();
+                Alert.alert(
+                  "Verification Sent",
+                  "Check your email to verify your account."
+                );
+                setCooldown(60); // start 60s cooldown
+              }
+
+              await auth().signOut(); // optional
+              setShowResend(false); // hide again after sending
+            } catch (error: any) {
+              Alert.alert("Error", error.message);
+            }
+          }}
+          style={{
+            backgroundColor: "#FFD700",
+            padding: 15,
+            borderRadius: 8,
+            margin: 10,
+          }}
+        >
+          <Text
+            style={{
+              color: cooldown > 0 ? "gray" : "black",
+              textAlign: "center",
+              fontWeight: "bold",
+            }}
+          >
+            {cooldown > 0
+              ? `Resend available in ${cooldown}s`
+              : "Resend Verification Email"}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

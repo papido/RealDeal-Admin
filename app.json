@@ -5,17 +5,23 @@
     "version": "1.0.0",
     "entryPoint": "./src/app/index.tsx",
     "orientation": "portrait",
-    "icon": "./assets/images/iconImage.jpg",
+    "icon": "./assets/images/iconImage.png",
     "scheme": "realdeal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splashImage.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/iconImage.jpg",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/iconImage.png",
+        "backgroundColor": "#ffffff",
+        "resizeMode": "contain"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.fauzanafk.RealDeal",
@@ -31,15 +37,14 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/iconImage.jpg"
+          "icon": "./assets/images/iconImage.png"
         }
       ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splashImage.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
+          "resizeMode": "cover",
           "backgroundColor": "#ffffff"
         }
       ],
@@ -49,6 +54,16 @@
         {
           "ios": {
             "useFrameworkSystemDefault": false
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
           }
         }
       ]

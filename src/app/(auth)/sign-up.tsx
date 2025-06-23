@@ -62,6 +62,8 @@ const SignUpScreen = () => {
         onChangeText={setEmail}
         placeholder="jon@gmail.com"
         style={styles.input}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <Text style={styles.label}>Password</Text>
@@ -70,7 +72,6 @@ const SignUpScreen = () => {
         onChangeText={setPassword}
         placeholder=""
         style={styles.input}
-        secureTextEntry
       />
 
       <Button loading={loading} onPress={onSubmit}>

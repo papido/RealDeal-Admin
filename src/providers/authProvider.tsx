@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
+      if (firebaseUser && firebaseUser.emailVerified) {
         const userData = await updateUserData(firebaseUser.uid);
         if (userData) {
           setUser(userData);
@@ -58,7 +58,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
             await setupNotifications(firebaseUser.uid);
           }
           console.log("User data:", userData);
-          router.replace("/(user)/menu");
+          setTimeout(() => {
+            router.push("/(user)/menu"); // To change to replace
+          }, 200);
         }
       } else {
         setUser(null);
@@ -127,11 +129,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       responseListener.current =
         Notifications.addNotificationResponseReceivedListener((response) => {
-          console.log("🔔 [INTERACTION] Notification Tapped:", response);
-          Alert.alert(
-            "Notification Tapped!",
-            JSON.stringify(response.notification.request.content, null, 2)
-          );
+          // console.log("🔔 [INTERACTION] Notification Tapped:", response);
+          // Alert.alert(
+          //   "Notification !",
+          //   JSON.stringify(response.notification.request.content, null, 2)
+          // );
         });
 
       console.log("✅ Notification listeners set up successfully");
@@ -219,7 +221,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      await auth().signInWithEmailAndPassword(email, password);
+      const response = await auth().signInWithEmailAndPassword(email, password);
+
+      if (!response.user.emailVerified) {
+        await auth().signOut(); // prevent unverified login
+        return {
+          success: false,
+          msg: "Please check your email and verify your email before signing in.",
+        };
+      }
+
+      // Save user to Firestore
+      const username = auth().currentUser?.displayName;
+      await firestore().collection("users").doc(response.user.uid).set({
+        username,
+        email,
+        uid: response.user.uid,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        address: "",
+      });
+
       console.log("✅ Email login successful");
       return { success: true };
     } catch (error: any) {
@@ -243,14 +264,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       );
       await response.user.updateProfile({ displayName: username });
 
-      // Save user to Firestore
-      await firestore().collection("users").doc(response.user.uid).set({
-        username,
-        email,
-        uid: response.user.uid,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        address: "",
-      });
+      // Send verification email
+      await response.user.sendEmailVerification();
+
+      Alert.alert(
+        "Verify Your Email",
+        "We sent a verification email to your inbox. Please verify your email before signing in."
+      );
 
       // Redirect to sign-in page manually
       router.push("/(auth)/sign-in");
