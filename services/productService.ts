@@ -40,26 +40,7 @@ export const createProduct = async (
       description: productData.description || "",
       speciality: productData.speciality || "",
       createdAt: productData.createdAt || new Date(),
-      items: productData.items || [
-        {
-          name: "Ultimate Pepperoni",
-          price: 6.4,
-          deliveryFee: 0,
-          distance: 0,
-        },
-        {
-          name: "ExtravaganZZa",
-          price: 10.2,
-          deliveryFee: 0,
-          distance: 0,
-        },
-        {
-          name: "MeatZZa",
-          price: 15.3,
-          deliveryFee: 0,
-          distance: 0,
-        },
-      ],
+      items: productData.items || [],
     };
 
     const productRef = productData?.id

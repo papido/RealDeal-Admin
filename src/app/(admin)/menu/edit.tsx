@@ -1,12 +1,13 @@
-import { createProduct } from "@/services/productService";
+import { firestore } from "@/config/firebase";
+import { deleteProduct, updateProduct } from "@/services/productService";
 import Button from "@/src/components/Button";
 import ImageUpload from "@/src/components/ImageUpload";
 import { colors } from "@/src/constants/theme";
 import { useAuth } from "@/src/providers/authProvider";
 import { ProductItem, ProductType } from "@/src/types";
 import * as ImagePicker from "expo-image-picker";
-import { Stack, useRouter } from "expo-router";
-import { useState } from "react";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -18,7 +19,7 @@ import {
 } from "react-native";
 import uuid from "react-native-uuid";
 
-const CreateProductScreen = () => {
+const EditProductScreen = () => {
   const { user } = useAuth();
   const [errors, setErrors] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,35 @@ const CreateProductScreen = () => {
     items: [],
   });
   const router = useRouter();
+  const { id } = useLocalSearchParams();
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const productDoc = await firestore()
+          .collection("products")
+          .doc(id as string)
+          .get();
+
+        if (productDoc.exists()) {
+          const productData = productDoc.data();
+          setProduct({
+            id: productDoc.id,
+            ...productData,
+            items: productData?.items || [], // Ensure items is always an array
+          } as ProductType);
+        }
+      } catch (error) {
+        Alert.alert("Error", "Failed to fetch product");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
 
   const onSubmit = async () => {
     setErrors("");
@@ -42,20 +72,10 @@ const CreateProductScreen = () => {
     }
     setLoading(true);
 
-    const res = await createProduct(product);
+    const res = await updateProduct(product.id!, product);
 
     setLoading(false);
     if (res.success) {
-      setProduct({
-        name: "",
-        images: [],
-        uid: user?.uid,
-        price: "",
-        category: "",
-        description: "",
-        speciality: "",
-        items: [],
-      });
       router.replace("/(admin)/menu");
     } else {
       Alert.alert("Product", res.msg);
@@ -83,6 +103,31 @@ const CreateProductScreen = () => {
     }
   };
 
+  const onDelete = async () => {
+    if (!product?.id) return;
+    setLoading(true);
+    const res = await deleteProduct(product?.id);
+    setLoading(false);
+    if (res.success) {
+      router.replace("/(admin)/menu");
+    } else {
+      Alert.alert("Product", res.msg);
+    }
+  };
+
+  const showDeleteAlert = () => {
+    Alert.alert("Confirm", "Are you sure you want to delete this product?", [
+      {
+        text: "Cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: onDelete,
+      },
+    ]);
+  };
+
   const addNewItem = () => {
     const newItem: ProductItem = {
       id: uuid.v4() as string,
@@ -102,9 +147,17 @@ const CreateProductScreen = () => {
     }));
   };
 
+  if (loading && !product.id) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Create Product" }} />
+      <Stack.Screen options={{ title: "Update Product" }} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {product.images.length > 0 && (
@@ -147,12 +200,13 @@ const CreateProductScreen = () => {
         <Text onPress={pickImage} style={styles.textButton}>
           Select Image
         </Text>
+
         <Text style={styles.label}>Name</Text>
         <TextInput
           value={product.name}
           onChangeText={(value) => setProduct({ ...product, name: value })}
           placeholder="Product Name"
-          placeholderTextColor={"gray"}
+          placeholderTextColor="#999"
           style={styles.input}
         />
 
@@ -161,7 +215,7 @@ const CreateProductScreen = () => {
           value={product.price}
           onChangeText={(value) => setProduct({ ...product, price: value })}
           placeholder="Range Price"
-          placeholderTextColor={"gray"}
+          placeholderTextColor="#999"
           style={styles.input}
         />
 
@@ -170,7 +224,7 @@ const CreateProductScreen = () => {
           value={product.category}
           onChangeText={(value) => setProduct({ ...product, category: value })}
           placeholder="Category"
-          placeholderTextColor={"gray"}
+          placeholderTextColor="#999"
           style={styles.input}
         />
 
@@ -181,7 +235,7 @@ const CreateProductScreen = () => {
             setProduct({ ...product, description: value })
           }
           placeholder="Description"
-          placeholderTextColor={"gray"}
+          placeholderTextColor="#999"
           style={styles.input}
         />
 
@@ -192,7 +246,7 @@ const CreateProductScreen = () => {
             setProduct({ ...product, speciality: value })
           }
           placeholder="Speciality"
-          placeholderTextColor={"gray"}
+          placeholderTextColor="#999"
           style={styles.input}
         />
 
@@ -203,7 +257,7 @@ const CreateProductScreen = () => {
           </Text>
         </View>
 
-        {(product.items ?? []).map((item, index) => (
+        {product.items?.map((item, index) => (
           <View key={item.id} style={styles.itemContainer}>
             <TextInput
               value={item.name}
@@ -213,7 +267,7 @@ const CreateProductScreen = () => {
                 setProduct({ ...product, items: updatedItems });
               }}
               placeholder="Item name"
-              placeholderTextColor={"gray"}
+              placeholderTextColor="#999"
               style={styles.input}
             />
             <TextInput
@@ -227,7 +281,7 @@ const CreateProductScreen = () => {
                 setProduct({ ...product, items: updatedItems });
               }}
               placeholder="Item price"
-              placeholderTextColor={"gray"}
+              placeholderTextColor="#999"
               keyboardType="numeric"
               style={styles.input}
             />
@@ -247,20 +301,33 @@ const CreateProductScreen = () => {
           <Text style={{ color: "red" }}>Maximum 5 images allowed!</Text>
         ) : (
           <Button onPress={onSubmit} loading={loading} disabled={loading}>
-            <Text style={styles.textButton}>Create</Text>
+            <Text style={styles.textButton}>Update</Text>
           </Button>
+        )}
+
+        {!loading && (
+          <Text
+            onPress={showDeleteAlert}
+            style={[styles.textButton, styles.deleteButton]}
+          >
+            Delete Product
+          </Text>
         )}
       </ScrollView>
     </View>
   );
 };
 
-export default CreateProductScreen;
+export default EditProductScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   input: {
     backgroundColor: "white",
@@ -268,6 +335,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: 5,
     marginBottom: 20,
+    fontSize: 16,
+    color: "black",
   },
   label: {
     color: "gray",
@@ -278,6 +347,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.black,
     marginVertical: 10,
+  },
+  deleteButton: {
+    color: "red",
   },
   itemsHeader: {
     flexDirection: "row",

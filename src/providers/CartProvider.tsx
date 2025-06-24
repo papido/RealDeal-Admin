@@ -341,10 +341,9 @@ const CartProvider = ({ children }: PropsWithChildren) => {
         productName: item.product.name,
         productImage: item.product.images[0].uri,
         productItem: {
+          id: item.productItem.id,
           name: item.productItem.name,
           price: item.productItem.price,
-          deliveryFee: deliveryInfo?.fee || 0,
-          distance: deliveryInfo?.distance || 0,
         },
         quantity: item.quantity,
       })),

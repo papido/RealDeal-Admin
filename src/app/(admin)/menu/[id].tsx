@@ -27,7 +27,7 @@ const ProductDetailsScreen = () => {
       <Stack.Screen
         options={{
           headerRight: () => (
-            <Link href={`/menu/create?id=${id}`} asChild>
+            <Link href={`/menu/edit?id=${id}`} asChild>
               <Pressable>
                 {({ pressed }) => (
                   <FontAwesome

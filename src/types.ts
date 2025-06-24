@@ -16,10 +16,9 @@ export type ProductType = {
 };
 
 export type ProductItem = {
+  id: string;
   name: string;
   price: number;
-  deliveryFee: number;
-  distance: number;
 };
 
 export type ProductImageType = {
