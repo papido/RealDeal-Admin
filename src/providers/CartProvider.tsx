@@ -370,15 +370,25 @@ const CartProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
-      // Convert image to blob
-      const response = await fetch(image);
-      const blob = await response.blob();
+      let downloadURL = "";
+      if (image && image !== "") {
+        try {
+          // Convert image to blob
+          const response = await fetch(image);
+          const blob = await response.blob();
 
-      // Create storage reference and upload using the new API
-      const filename = `payment_proofs/${order.uid}_${Date.now()}.jpg`;
-      const storageRef = storage().ref(filename);
-      await storageRef.put(blob);
-      const downloadURL = await storageRef.getDownloadURL();
+          // Create storage reference and upload
+          const filename = `payment_proofs/${order.uid}_${Date.now()}.jpg`;
+          const storageRef = storage().ref(filename);
+          await storageRef.put(blob);
+
+          // Get download URL
+          downloadURL = await storageRef.getDownloadURL();
+        } catch (error) {
+          console.error("Image upload failed:", error);
+          // Optionally handle fallback here or notify user
+        }
+      }
 
       // Create payment data and add to Firestore using the new API
       const paymentData: PaymentType = {

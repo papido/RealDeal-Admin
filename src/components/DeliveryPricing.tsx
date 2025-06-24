@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useCart } from "../providers/CartProvider";
 import { useAuth } from "../providers/authProvider";
@@ -24,15 +24,15 @@ const DeliveryPricing = () => {
 
   const { user } = useAuth();
 
-  // Debug effect to log current state
-  useEffect(() => {
-    console.log("=== DeliveryPricing Debug Info ===");
-    console.log("User address:", user?.address);
-    console.log("Has deliveryInfo:", !!deliveryInfo);
-    console.log("DeliveryInfo:", deliveryInfo);
-    console.log("Current location:", location);
-    console.log("================================");
-  }, [user?.address, deliveryInfo, location]);
+  // // Debug effect to log current state
+  // useEffect(() => {
+  //   console.log("=== DeliveryPricing Debug Info ===");
+  //   console.log("User address:", user?.address);
+  //   console.log("Has deliveryInfo:", !!deliveryInfo);
+  //   console.log("DeliveryInfo:", deliveryInfo);
+  //   console.log("Current location:", location);
+  //   console.log("================================");
+  // }, [user?.address, deliveryInfo, location]);
 
   // Always check if we need to calculate delivery
   const hasDeliveryInfo = !!deliveryInfo;
