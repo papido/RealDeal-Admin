@@ -1,5 +1,6 @@
 import useFetchData from "@/services/useFetchData";
 import ProductListItem from "@/src/components/ProductListItem";
+import { colors } from "@/src/constants/theme";
 import { useAuth } from "@/src/providers/authProvider";
 import { ProductType } from "@/src/types";
 import { router } from "expo-router";
@@ -61,7 +62,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    backgroundColor: "#E5E5E5",
+    backgroundColor: colors.secondaryLight,
+    borderColor: colors.primary,
     borderRadius: 12,
     borderWidth: 1,
   },

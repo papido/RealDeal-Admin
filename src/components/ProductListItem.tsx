@@ -94,6 +94,6 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 16,
     fontWeight: "bold",
-    color: colors.primary || "#FF914D",
+    color: colors.primaryLight,
   },
 });

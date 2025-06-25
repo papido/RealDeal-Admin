@@ -1,14 +1,17 @@
+import { colors } from "@/src/constants/theme";
 import { Stack } from "expo-router";
 import React from "react";
 
 export default function OrderStack() {
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+      }}
+    >
       <Stack.Screen name="index" options={{ title: "Orders" }} />
-      {/* <Stack.Screen
-        name="qrPayment"
-        options={{ title: "Upload Payment Proof" }}
-      /> */}
     </Stack>
   );
 }

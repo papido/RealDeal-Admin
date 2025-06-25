@@ -96,15 +96,17 @@ const ProductDetailsScreen = () => {
         ))}
       </View>
 
-      {/* Price */}
-      <Text style={styles.price}>
-        RM {selectedItem ? selectedItem.price.toFixed(2) : product.price}
-      </Text>
+      <View style={{ marginTop: "auto" }}>
+        {/* Price */}
+        <Text style={styles.price}>
+          RM {selectedItem ? selectedItem.price.toFixed(2) : product.price}
+        </Text>
 
-      {/* Add to Cart */}
-      <Button onPress={addToCart} loading={loading} style={styles.button}>
-        <Text style={styles.buttonText}>Add to Cart</Text>
-      </Button>
+        {/* Add to Cart */}
+        <Button onPress={addToCart} loading={loading} style={styles.button}>
+          <Text style={styles.buttonText}>Add to Cart</Text>
+        </Button>
+      </View>
     </ScrollView>
   );
 };
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
+    padding: 15,
     justifyContent: "flex-start",
   },
   imageGrid: {
@@ -186,7 +188,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   selectedItem: {
-    backgroundColor: "#ffd95a",
+    backgroundColor: colors.secondaryLight,
   },
   itemText: {
     fontSize: 16,
@@ -199,17 +201,14 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 20,
     fontWeight: "bold",
-    marginTop: 90,
   },
   button: {
-    backgroundColor: colors.primaryLight,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: "auto",
   },
   buttonText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#fff",
+    color: "black",
   },
 });

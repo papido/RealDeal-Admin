@@ -1,16 +1,30 @@
+import { colors } from "@/src/constants/theme";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
 import React from "react";
 
 const _layout = () => {
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: "#286511",
+        tabBarInactiveTintColor: "#525252",
+        tabBarLabelStyle: {
+          fontSize: 12,
+        },
+        tabBarStyle: {
+          backgroundColor: colors.primary,
+          borderTopColor: "#ccc",
+          height: 50,
+        },
+      }}
+    >
       <Tabs.Screen
         name="menu"
         options={{
           title: "Menu",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ size, color }) => (
             <FontAwesome name="cutlery" size={size} color={color} />
           ),
         }}
@@ -20,7 +34,7 @@ const _layout = () => {
         options={{
           title: "Orders",
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ size, color }) => (
             <FontAwesome name="th-list" size={size} color={color} />
           ),
         }}
@@ -29,8 +43,11 @@ const _layout = () => {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="user" size={size} color="black" />
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          tabBarIcon: ({ size, color }) => (
+            <FontAwesome name="user" size={size} color={color} />
           ),
         }}
       />

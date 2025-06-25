@@ -23,7 +23,7 @@ export default function MenuStack() {
         ),
 
         headerStyle: {
-          backgroundColor: colors.primaryLight,
+          backgroundColor: colors.primary,
         },
       }}
     >
