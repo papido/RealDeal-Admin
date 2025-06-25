@@ -22,6 +22,10 @@ const MenuScreen = () => {
           <Text style={styles.welcomeText}>Welcome back, </Text>
           <Text style={styles.welcomeUsername}>{user?.username} 👋</Text>
         </View>
+        <Text>
+          Here you can find the best meal kits that you can cook anytime and
+          anywhere.
+        </Text>
       </View>
 
       {/* Product List */}
