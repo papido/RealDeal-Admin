@@ -10,6 +10,8 @@ import { useState } from "react";
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -27,7 +29,7 @@ const CreateProductScreen = () => {
     images: [],
     uid: user?.uid,
     price: "",
-    category: "",
+    prepTime: "",
     description: "",
     speciality: "",
     items: [],
@@ -51,7 +53,7 @@ const CreateProductScreen = () => {
         images: [],
         uid: user?.uid,
         price: "",
-        category: "",
+        prepTime: "",
         description: "",
         speciality: "",
         items: [],
@@ -103,7 +105,11 @@ const CreateProductScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
       <Stack.Screen options={{ title: "Create Product" }} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -165,11 +171,11 @@ const CreateProductScreen = () => {
           style={styles.input}
         />
 
-        <Text style={styles.label}>Category</Text>
+        <Text style={styles.label}>Preparation Time</Text>
         <TextInput
-          value={product.category}
-          onChangeText={(value) => setProduct({ ...product, category: value })}
-          placeholder="Category"
+          value={product.prepTime}
+          onChangeText={(value) => setProduct({ ...product, prepTime: value })}
+          placeholder="Preparation Time"
           placeholderTextColor={"gray"}
           style={styles.input}
         />
@@ -251,7 +257,7 @@ const CreateProductScreen = () => {
           </Button>
         )}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

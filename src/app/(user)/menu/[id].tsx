@@ -1,12 +1,20 @@
 import { useFetchIdProducts } from "@/services/useFetchIdProduct";
 import Loading from "@/src/components/Loading";
-import { defaultPizzaImage } from "@/src/components/ProductListItem";
+import { colors } from "@/src/constants/theme";
 import { useCart } from "@/src/providers/CartProvider";
 import { ProductItem } from "@/src/types";
 import Button from "@components/Button";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 const ProductDetailsScreen = () => {
   const { id } = useLocalSearchParams();
@@ -14,6 +22,7 @@ const ProductDetailsScreen = () => {
   const router = useRouter();
   const { product, loading, fetchProduct } = useFetchIdProducts();
   const [selectedItem, setSelectedItem] = useState<ProductItem>();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -22,44 +31,63 @@ const ProductDetailsScreen = () => {
   }, [id]);
 
   const addToCart = () => {
-    if (!product || !selectedItem) {
-      return;
-    }
+    if (!product || !selectedItem) return;
     addItem(product, selectedItem);
     router.push("/cart");
   };
 
   if (loading) return <Loading />;
-  if (!product) {
-    return <Text>Product not found</Text>;
-  }
+  if (!product) return <Text>Product not found</Text>;
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       {product && <Stack.Screen options={{ title: product.name }} />}
-      <Image
-        source={{ uri: product.images[0].uri || defaultPizzaImage }}
-        style={styles.image}
-      />
 
-      <Text style={styles.itemsText}>Select an item:</Text>
+      {/* Image grid */}
+      <View style={styles.imageGrid}>
+        {product.images.slice(0, 6).map((image, index) => (
+          <Pressable key={index} onPress={() => setSelectedImage(image.uri)}>
+            <Image source={{ uri: image.uri }} style={styles.image} />
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Fullscreen image modal */}
+      <Modal visible={!!selectedImage} transparent>
+        <Pressable
+          style={styles.modalBackground}
+          onPress={() => setSelectedImage(null)}
+        >
+          <Image source={{ uri: selectedImage! }} style={styles.fullImage} />
+        </Pressable>
+      </Modal>
+
+      {/* Product Info */}
+      <Text style={styles.name}>{product.name}</Text>
+      <Text style={styles.category}>{product.prepTime} minutes</Text>
+      <Text style={styles.speciality}>{product.speciality}</Text>
+      <Text style={styles.description}>{product.description}</Text>
+
+      {/* Item Selection */}
+      <Text style={styles.sectionTitle}>Choose Portion:</Text>
       <View style={styles.items}>
         {product.items?.map((mapItem) => (
           <Pressable
             onPress={() => setSelectedItem(mapItem)}
+            key={mapItem.name}
             style={[
               styles.item,
-              {
-                backgroundColor:
-                  selectedItem === mapItem ? "gainsboro" : "white",
-              },
+              selectedItem === mapItem && styles.selectedItem,
             ]}
-            key={mapItem.name}
           >
             <Text
               style={[
-                styles.itemsText,
-                { color: selectedItem === mapItem ? "black" : "gray" },
+                styles.itemText,
+                selectedItem === mapItem && styles.selectedItemText,
               ]}
             >
               {mapItem.name}
@@ -68,18 +96,16 @@ const ProductDetailsScreen = () => {
         ))}
       </View>
 
-      {selectedItem && (
-        <Text style={styles.price}>RM{selectedItem.price.toFixed(2)}</Text>
-      )}
+      {/* Price */}
+      <Text style={styles.price}>
+        RM {selectedItem ? selectedItem.price.toFixed(2) : product.price}
+      </Text>
 
-      {!selectedItem && product.price && (
-        <Text style={styles.price}>{product.price}</Text>
-      )}
-
-      <Button onPress={addToCart} loading={loading}>
-        <Text>Add to cart</Text>
+      {/* Add to Cart */}
+      <Button onPress={addToCart} loading={loading} style={styles.button}>
+        <Text style={styles.buttonText}>Add to Cart</Text>
       </Button>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -87,36 +113,103 @@ export default ProductDetailsScreen;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "white",
     flex: 1,
-    padding: 10,
+    backgroundColor: "#fff",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: "flex-start",
+  },
+  imageGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginBottom: 8,
   },
   image: {
-    width: "100%",
-    aspectRatio: 1,
-    resizeMode: "cover",
+    width: 110,
+    height: 110,
+    borderRadius: 10,
+    margin: 6,
   },
-  price: {
-    fontSize: 18,
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "90%",
+    height: "70%",
+    resizeMode: "contain",
+    borderRadius: 10,
+  },
+  name: {
+    fontSize: 24,
     fontWeight: "bold",
-    marginTop: "auto",
+    marginBottom: 6,
+  },
+  category: {
+    fontSize: 16,
+    color: "#888",
+    marginBottom: 10,
+  },
+  description: {
+    fontSize: 16,
+    marginBottom: 5,
+    lineHeight: 22,
+  },
+  speciality: {
+    fontSize: 16,
+    fontStyle: "italic",
+    marginBottom: 8,
+    color: "#555",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 10,
+    marginBottom: 10,
   },
   items: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 10,
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+    gap: 10,
   },
   item: {
-    backgroundColor: "gainsboro",
-    width: 120,
-    aspectRatio: 1.5,
-    paddingHorizontal: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#f1f1f1",
+    marginBottom: 10,
   },
-  itemsText: {
+  selectedItem: {
+    backgroundColor: "#ffd95a",
+  },
+  itemText: {
+    fontSize: 16,
+    color: "#444",
+  },
+  selectedItemText: {
+    fontWeight: "bold",
+    color: "#000",
+  },
+  price: {
     fontSize: 20,
-    fontWeight: "500",
+    fontWeight: "bold",
+    marginTop: 90,
+  },
+  button: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: "auto",
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
   },
 });

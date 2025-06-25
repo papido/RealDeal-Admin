@@ -4,7 +4,7 @@ import { ViewStyle } from "react-native";
 
 export type ProductType = {
   id?: string;
-  category?: string;
+  prepTime?: string;
   images: ProductImageType[];
   name: string;
   description?: string;

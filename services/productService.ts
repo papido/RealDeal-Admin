@@ -36,7 +36,7 @@ export const createProduct = async (
           : [{ id: uuid.v4(), uri: defaultPizzaImage }],
       name: productData.name || "",
       price: productData.price || "RM7-RM18",
-      category: productData.category || "",
+      prepTime: productData.prepTime || "",
       description: productData.description || "",
       speciality: productData.speciality || "",
       createdAt: productData.createdAt || new Date(),

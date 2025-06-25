@@ -15,18 +15,17 @@ import {
 
 const ProfileScreen = () => {
   const { logout, user, updateUserData, setUser } = useAuth();
-  const [locationLoading, setLocationLoading] = useState<boolean>(false);
-  const [editingField, setEditingField] = useState<
-    "username" | "email" | "address" | null
-  >(null);
+  const { getLocation, calculateDeliveryFromAddress, cartItems } = useCart();
+  const [editingField, setEditingField] = useState<"username" | "email" | null>(
+    null
+  );
   const [form, setForm] = useState({
     username: user?.username || "",
     email: user?.email || "",
-    address: user?.address || "",
   });
-  const { getLocation, calculateDeliveryFromAddress, cartItems } = useCart();
+  const [locationLoading, setLocationLoading] = useState(false);
 
-  const updateField = async (field: keyof typeof form) => {
+  const updateField = async (field: "username" | "email") => {
     if (!user?.uid) return;
     await firestore()
       .collection("users")
@@ -34,30 +33,22 @@ const ProfileScreen = () => {
       .update({
         [field]: form[field],
       });
-    const updated = await updateUserData(user?.uid);
+    const updated = await updateUserData(user.uid);
     setUser(updated);
     setEditingField(null);
   };
 
-  const handleEdit = (field: "username" | "email" | "address") => {
-    setForm({
-      username: user?.username || "",
-      email: user?.email || "",
-      address: user?.address || "",
-    });
+  const handleEdit = (field: "username" | "email") => {
+    setForm({ username: user?.username || "", email: user?.email || "" });
     setEditingField(field);
   };
 
-  // Combined function to update address and recalculate delivery
   const updateAddressAndDelivery = async () => {
     setLocationLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission denied",
-          "Permission to access location was denied"
-        );
+        Alert.alert("Permission denied", "Cannot access your location.");
         setLocationLoading(false);
         return;
       }
@@ -66,155 +57,112 @@ const ProfileScreen = () => {
       const [address] = await Location.reverseGeocodeAsync(location.coords);
       const fullAddress = `${address.name}, ${address.street}, ${address.postalCode}, ${address.city}, ${address.region}`;
 
-      // Update user address in Firestore
       await firestore().collection("users").doc(user?.uid).update({
         address: fullAddress,
       });
 
-      // Update local user data
       const updated = await updateUserData(user?.uid!);
       setUser(updated);
 
-      // Calculate delivery for the new address
-      let deliveryMessage = "Address updated successfully!";
-
+      let message = "Address updated!";
       try {
         await calculateDeliveryFromAddress(fullAddress);
-
-        // Check if user has items in cart to provide appropriate feedback
-        if (cartItems && cartItems.length > 0) {
-          deliveryMessage +=
-            " Delivery information has been calculated for your cart items.";
-        } else {
-          deliveryMessage +=
-            " Delivery rates are ready for when you add items to your cart.";
-        }
-      } catch (deliveryError) {
-        console.error("Error calculating delivery:", deliveryError);
-        deliveryMessage +=
-          " However, there was an issue calculating delivery rates. You can recalculate them later.";
+        message += cartItems?.length
+          ? " Delivery calculated for your items."
+          : " Ready when you add items to your cart.";
+      } catch {
+        message += " But delivery rate calculation failed.";
       }
 
-      Alert.alert("Success", deliveryMessage);
-    } catch (error) {
-      console.error("Error getting location:", error);
-      Alert.alert("Error", "Failed to get location. Please try again.");
+      Alert.alert("Success", message);
+    } catch (err) {
+      console.error("Location error", err);
+      Alert.alert("Error", "Failed to get address.");
     }
     setLocationLoading(false);
   };
 
-  // Function to recalculate delivery for current address
-  // const recalculateDeliveryOnly = async () => {
-  //   if (user?.address) {
-  //     try {
-  //       await calculateDeliveryFromAddress(user.address);
-  //       Alert.alert("Success", "Delivery information updated!");
-  //     } catch (error) {
-  //       Alert.alert("Error", "Failed to calculate delivery. Please try again.");
-  //     }
-  //   } else {
-  //     Alert.alert("No Address", "Please set your address first.");
-  //   }
-  // };
-
   return (
     <View style={styles.container}>
-      {/* Name */}
-      <Text style={styles.label}>Name</Text>
-      {editingField === "username" ? (
-        <View style={styles.row}>
-          <TextInput
-            style={styles.input}
-            value={form.username}
-            onChangeText={(text) => setForm({ ...form, username: text })}
-          />
-          <Button onPress={() => updateField("username")}>
-            <Text>Save</Text>
-          </Button>
-        </View>
-      ) : (
-        <View style={styles.row}>
-          <Text>{user?.username}</Text>
-          <TouchableOpacity onPress={() => handleEdit("username")}>
-            <Text style={styles.edit}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Username Section */}
+      <View style={styles.card}>
+        <Text style={styles.label}>Username</Text>
+        {editingField === "username" ? (
+          <View style={styles.editRow}>
+            <TextInput
+              style={styles.input}
+              value={form.username}
+              onChangeText={(t) => setForm((f) => ({ ...f, username: t }))}
+            />
+            <Button
+              onPress={() => updateField("username")}
+              style={{ paddingHorizontal: 16, paddingVertical: 10 }}
+            >
+              <Text style={{ fontWeight: "bold", color: "#fff" }}>Save</Text>
+            </Button>
+          </View>
+        ) : (
+          <View style={styles.displayRow}>
+            <Text style={styles.text}>{user?.username}</Text>
+            <TouchableOpacity onPress={() => handleEdit("username")}>
+              <Text style={styles.edit}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
 
-      {/* Email */}
-      <Text style={styles.label}>Email</Text>
-      {editingField === "email" ? (
-        <View style={styles.row}>
-          <TextInput
-            style={styles.input}
-            value={form.email}
-            onChangeText={(text) => setForm({ ...form, email: text })}
-          />
-          <Button onPress={() => updateField("email")}>
-            <Text>Save</Text>
-          </Button>
-        </View>
-      ) : (
-        <View style={styles.row}>
-          <Text>{user?.email}</Text>
-          <TouchableOpacity onPress={() => handleEdit("email")}>
-            <Text style={styles.edit}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Email Section */}
+      <View style={styles.card}>
+        <Text style={styles.label}>Email</Text>
+        {editingField === "email" ? (
+          <View style={styles.editRow}>
+            <TextInput
+              style={styles.input}
+              value={form.email}
+              onChangeText={(t) => setForm((f) => ({ ...f, email: t }))}
+            />
+            <Button
+              onPress={() => updateField("email")}
+              style={{ paddingHorizontal: 16, paddingVertical: 10 }}
+            >
+              <Text style={{ fontWeight: "bold", color: "#fff" }}>Save</Text>
+            </Button>
+          </View>
+        ) : (
+          <View style={styles.displayRow}>
+            <Text style={styles.text}>{user?.email}</Text>
+            <TouchableOpacity onPress={() => handleEdit("email")}>
+              <Text style={styles.edit}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
 
-      {/* Address */}
-      <Text style={styles.label}>Address</Text>
-      {user?.address ? (
-        <View style={styles.row}>
-          <Text style={styles.addressInRow}>{user.address}</Text>
+      {/* Address Section */}
+      <View style={styles.card}>
+        <Text style={styles.label}>Address</Text>
+        <View style={styles.displayRow}>
+          <Text style={[styles.text, { flex: 1 }]}>
+            {user?.address || "No address set"}
+          </Text>
           <TouchableOpacity
             onPress={updateAddressAndDelivery}
             disabled={locationLoading}
           >
-            <Text style={[styles.edit, locationLoading && styles.editDisabled]}>
-              {locationLoading ? "Updating..." : "Update"}
+            <Text style={[styles.edit, locationLoading && styles.disabled]}>
+              {locationLoading
+                ? "Updating..."
+                : user?.address
+                  ? "Update"
+                  : "Set Address"}
             </Text>
           </TouchableOpacity>
         </View>
-      ) : (
-        <View style={styles.row}>
-          <Text style={styles.noAddressInRow}>No address set</Text>
-          <TouchableOpacity
-            onPress={updateAddressAndDelivery}
-            disabled={locationLoading}
-          >
-            <Text style={[styles.edit, locationLoading && styles.editDisabled]}>
-              {locationLoading ? "Setting..." : "Set Address"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      </View>
 
-      {/* Optional: Keep a separate button for recalculating delivery without updating address
-      {user?.address && (
-        <TouchableOpacity
-          onPress={recalculateDeliveryOnly}
-          style={styles.recalculateButton}
-        >
-          <Text style={styles.recalculateText}>Recalculate Delivery Only</Text>
-        </TouchableOpacity>
-      )} */}
-
-      <TouchableOpacity
-        onPress={logout}
-        style={{
-          marginTop: 16,
-          backgroundColor: "#f44336",
-          padding: 15,
-          borderRadius: 8,
-        }}
-      >
-        <Text
-          style={{ color: "white", textAlign: "center", fontWeight: "bold" }}
-        >
-          Sign Out
-        </Text>
+      {/* Logout */}
+      <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+        <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
     </View>
   );
@@ -224,54 +172,67 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 16,
+    backgroundColor: "#fefefe",
+  },
+  card: {
+    backgroundColor: "#fff",
+    padding: 14,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: 16,
   },
   label: {
-    fontWeight: "bold",
-    marginTop: 16,
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 4,
+    fontWeight: "600",
   },
-  row: {
+  text: {
+    fontSize: 16,
+    color: "#333",
+  },
+  displayRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 4,
+  },
+  editRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 8,
     flex: 1,
-    marginRight: 8,
-    borderRadius: 6,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginRight: 10,
+    backgroundColor: "#fafafa",
   },
   edit: {
     color: "#007bff",
-    marginLeft: 8,
+    fontWeight: "500",
   },
-  editDisabled: {
-    color: "#ccc",
+  disabled: {
+    color: "#bbb",
   },
-  addressInRow: {
-    flex: 1,
+  logoutBtn: {
+    marginTop: 20,
+    backgroundColor: "#f44336",
+    padding: 14,
+    borderRadius: 10,
+  },
+  logoutText: {
+    textAlign: "center",
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
-    color: "#333",
-    marginRight: 8,
-  },
-  noAddressInRow: {
-    flex: 1,
-    fontSize: 16,
-    color: "#666",
-    fontStyle: "italic",
-    marginRight: 8,
-  },
-  recalculateButton: {
-    marginTop: 8,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  recalculateText: {
-    color: "#28a745",
-    fontSize: 14,
-    textDecorationLine: "underline",
   },
 });

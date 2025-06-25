@@ -8,13 +8,23 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 
 const MenuScreen = () => {
   const { user } = useAuth();
+
   const { data: products } = useFetchData<ProductType>("products", (ref) => {
-    if (!user?.uid) return ref; // Or return null to skip the query altogether
+    if (!user?.uid) return ref;
     return ref.where("uid", "==", user.uid).orderBy("createdAt", "desc");
   });
 
   return (
-    <>
+    <View style={styles.container}>
+      {/* Welcome Card */}
+      <View style={styles.welcomeCard}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={styles.welcomeText}>Welcome back, </Text>
+          <Text style={styles.welcomeUsername}>{user?.username} 👋</Text>
+        </View>
+      </View>
+
+      {/* Product List */}
       {products.length > 0 ? (
         <FlatList
           data={products}
@@ -26,21 +36,47 @@ const MenuScreen = () => {
           columnWrapperStyle={{ gap: 10 }}
         />
       ) : (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text style={styles.text}>No products found</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.text}>😕 No meal kits found.</Text>
         </View>
       )}
-    </>
+    </View>
   );
 };
 
 export default MenuScreen;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  welcomeCard: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    marginHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: "#E5E5E5",
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  welcomeText: {
+    fontSize: 14,
+    color: "#444",
+  },
+  welcomeUsername: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#222",
+  },
   text: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
