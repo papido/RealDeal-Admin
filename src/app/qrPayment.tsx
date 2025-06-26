@@ -126,14 +126,14 @@ const UploadPaymentScreen = () => {
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
         {/* --- Order Info --- */}
-        <Text style={styles.sectionTitle}>🧾 Order Summary</Text>
+        <Text style={styles.sectionTitle}>1.Order Summary🧾</Text>
         <Text style={styles.label}>Order ID: {order.id}</Text>
         <Text style={styles.label}>
           Delivery Time: {order.deliveryDateTime}
         </Text>
 
         {/* --- QR Section --- */}
-        <Text style={styles.sectionTitle}>📷 Scan QR to Pay</Text>
+        <Text style={styles.sectionTitle}>2.Scan QR to Pay📷 </Text>
         <Text style={styles.subText}>Long press to save image to gallery.</Text>
 
         <TouchableWithoutFeedback onLongPress={onLongPressQR}>
@@ -144,7 +144,7 @@ const UploadPaymentScreen = () => {
         </TouchableWithoutFeedback>
 
         {/* --- Upload Section --- */}
-        <Text style={styles.sectionTitle}>📤 Upload Payment Proof</Text>
+        <Text style={styles.sectionTitle}>3.Upload Payment Proof📤 </Text>
         <Text style={styles.subText}>
           Choose a screenshot or send via WhatsApp.
         </Text>
@@ -169,6 +169,7 @@ const UploadPaymentScreen = () => {
         {image && <Image source={{ uri: image }} style={styles.previewImage} />}
 
         {/* --- Continue Button --- */}
+        <Text style={styles.sectionTitle}>4.Press Continue Order Button👇🏼</Text>
         <Button
           style={styles.continueButton}
           onPress={handleUpload}
@@ -184,14 +185,18 @@ const UploadPaymentScreen = () => {
 export default UploadPaymentScreen;
 
 const styles = StyleSheet.create({
-  scrollContainer: {},
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingBottom: 30,
+  },
   container: {
     alignItems: "center",
   },
   sectionTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    marginTop: 20,
+    marginTop: 8,
     marginBottom: 10,
     textAlign: "center",
   },
@@ -226,7 +231,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginVertical: 10,
+    marginVertical: 5,
   },
   imageButton: {
     backgroundColor: "brown",

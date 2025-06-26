@@ -20,7 +20,7 @@ const MenuScreen = () => {
       {/* Welcome Card */}
       <View style={styles.welcomeCard}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text style={styles.welcomeText}>Welcome back, </Text>
+          <Text style={styles.welcomeText}>Welcome, </Text>
           <Text style={styles.welcomeUsername}>{user?.username} 👋</Text>
         </View>
         <Text>

@@ -43,9 +43,7 @@ const _layout = () => {
         name="profile"
         options={{
           title: "Profile",
-          headerStyle: {
-            backgroundColor: colors.primary,
-          },
+          headerShown: false,
           tabBarIcon: ({ size, color }) => (
             <FontAwesome name="user" size={size} color={color} />
           ),

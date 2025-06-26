@@ -9,6 +9,7 @@ export type ProductType = {
   name: string;
   description?: string;
   speciality?: string;
+  ingredients?: string;
   price?: string;
   createdAt?: Date;
   items?: ProductItem[];

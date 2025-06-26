@@ -23,6 +23,7 @@ const ProductDetailsScreen = () => {
   const { product, loading, fetchProduct } = useFetchIdProducts();
   const [selectedItem, setSelectedItem] = useState<ProductItem>();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showError, setShowError] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -31,7 +32,11 @@ const ProductDetailsScreen = () => {
   }, [id]);
 
   const addToCart = () => {
-    if (!product || !selectedItem) return;
+    if (!product || !selectedItem) {
+      setShowError(true);
+      return;
+    }
+    setShowError(false);
     addItem(product, selectedItem);
     router.push("/cart");
   };
@@ -68,16 +73,21 @@ const ProductDetailsScreen = () => {
 
       {/* Product Info */}
       <Text style={styles.name}>{product.name}</Text>
-      <Text style={styles.category}>{product.prepTime} minutes</Text>
+      <Text style={styles.prepTime}>{product.prepTime} minutes</Text>
       <Text style={styles.speciality}>{product.speciality}</Text>
       <Text style={styles.description}>{product.description}</Text>
+      <Text style={styles.sectionTitle}>Ingredients:</Text>
+      <Text style={styles.description}>{product.ingredients}</Text>
 
       {/* Item Selection */}
       <Text style={styles.sectionTitle}>Choose Portion:</Text>
       <View style={styles.items}>
         {product.items?.map((mapItem) => (
           <Pressable
-            onPress={() => setSelectedItem(mapItem)}
+            onPress={() => {
+              setSelectedItem(mapItem);
+              setShowError(false);
+            }}
             key={mapItem.name}
             style={[
               styles.item,
@@ -97,6 +107,9 @@ const ProductDetailsScreen = () => {
       </View>
 
       <View style={{ marginTop: "auto" }}>
+        {showError && (
+          <Text style={styles.errorText}>Choose a portion first.</Text>
+        )}
         {/* Price */}
         <Text style={styles.price}>
           RM {selectedItem ? selectedItem.price.toFixed(2) : product.price}
@@ -152,7 +165,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 6,
   },
-  category: {
+  prepTime: {
     fontSize: 16,
     color: "#888",
     marginBottom: 10,
@@ -210,5 +223,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "black",
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 5,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

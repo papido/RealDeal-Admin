@@ -18,7 +18,7 @@ const OrdersScreen = () => {
         <FlatList
           data={orders}
           renderItem={({ item }) => <OrderListItem order={item} />}
-          contentContainerStyle={{ gap: 10, padding: 10 }}
+          contentContainerStyle={{ gap: 10, padding: 10, borderColor: "gray" }}
         />
       ) : (
         <View
@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "stretch",
+    backgroundColor: "white",
   },
   text: {
     fontSize: 20,

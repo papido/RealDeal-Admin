@@ -191,6 +191,17 @@ const CreateProductScreen = () => {
           style={styles.input}
         />
 
+        <Text style={styles.label}>Ingredients</Text>
+        <TextInput
+          value={product.ingredients}
+          onChangeText={(value) =>
+            setProduct({ ...product, ingredients: value })
+          }
+          placeholder="Ingredients"
+          placeholderTextColor={"gray"}
+          style={styles.input}
+        />
+
         <Text style={styles.label}>Speciality</Text>
         <TextInput
           value={product.speciality}

@@ -11,33 +11,68 @@ const DeliveryScheduler: React.FC<DeliverySchedulerProps> = ({
   onDateTimeChange,
   initialDate,
 }) => {
+  const getNextAvailableWeekend = () => {
+    const today = new Date();
+    const day = today.getDay(); // 0 = Sunday, 6 = Saturday
+
+    let startFrom = new Date(today);
+    startFrom.setHours(0, 0, 0, 0);
+
+    // If today is Friday (5), Saturday (6), or Sunday (0), shift to next weekend
+    if (day >= 5 || day === 0) {
+      const daysToNextSaturday = (13 - day) % 7 || 7; // Next Saturday
+      startFrom.setDate(today.getDate() + daysToNextSaturday);
+    } else {
+      // Otherwise this week's weekend
+      const daysToSaturday = (6 - day) % 7;
+      startFrom.setDate(today.getDate() + daysToSaturday);
+    }
+
+    const saturday = new Date(startFrom);
+    const sunday = new Date(startFrom);
+    sunday.setDate(saturday.getDate() + 1);
+
+    return [saturday, sunday];
+  };
+
+  const getValidWeekendDate = (selectedDate: Date) => {
+    const selectedDay = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+
+    const isWeekend = selectedDay === 0 || selectedDay === 6;
+    const isFuture = selected.getTime() >= now.getTime();
+
+    return isWeekend && isFuture;
+  };
+
   const [date, setDate] = useState(() => {
     if (initialDate) return initialDate;
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 2);
-    tomorrow.setHours(9, 0, 0, 0); // Default to 9:00 AM
-    return tomorrow;
+    return getNextAvailableWeekend()[0]; // Default to Saturday
   });
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // Restriction helpers
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 2);
-  tomorrow.setHours(0, 0, 0, 0);
-
   const onDateChange = (event: any, selectedDate: any) => {
     setShowDatePicker(false);
-    if (selectedDate) {
-      const updated = new Date(date);
-      updated.setFullYear(selectedDate.getFullYear());
-      updated.setMonth(selectedDate.getMonth());
-      updated.setDate(selectedDate.getDate());
-      setDate(updated);
-      onDateTimeChange(updated);
+    if (!selectedDate) return;
+
+    if (!getValidWeekendDate(selectedDate)) {
+      Alert.alert("Invalid Date", "Please select Saturday or Sunday only.");
+      return;
     }
+
+    const updated = new Date(date);
+    updated.setFullYear(selectedDate.getFullYear());
+    updated.setMonth(selectedDate.getMonth());
+    updated.setDate(selectedDate.getDate());
+    setDate(updated);
+    onDateTimeChange(updated);
   };
 
   const onTimeChange = (event: any, selectedTime: any) => {
@@ -95,7 +130,7 @@ const DeliveryScheduler: React.FC<DeliverySchedulerProps> = ({
           mode="date"
           display="default"
           onChange={onDateChange}
-          minimumDate={tomorrow}
+          minimumDate={getNextAvailableWeekend()[0]}
         />
       )}
       {showTimePicker && (

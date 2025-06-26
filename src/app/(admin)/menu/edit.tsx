@@ -28,7 +28,7 @@ const EditProductScreen = () => {
     images: [],
     uid: user?.uid,
     price: "",
-    category: "",
+    prepTime: "",
     description: "",
     speciality: "",
     items: [],
@@ -219,10 +219,10 @@ const EditProductScreen = () => {
           style={styles.input}
         />
 
-        <Text style={styles.label}>Category</Text>
+        <Text style={styles.label}>Preparation Time</Text>
         <TextInput
-          value={product.category}
-          onChangeText={(value) => setProduct({ ...product, category: value })}
+          value={product.prepTime}
+          onChangeText={(value) => setProduct({ ...product, prepTime: value })}
           placeholder="Category"
           placeholderTextColor="#999"
           style={styles.input}

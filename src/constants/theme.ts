@@ -2,7 +2,7 @@ import { scale, verticalScale } from "@/utils/styling";
 const tintColorLight = "#2f95dc";
 const tintColorDark = "#fff";
 export const colors = {
-  primary: "#FFF3C1",
+  primary: "#FFFDF0",
   primaryLight: "#4CAF50",
   secondaryLight: "#EBD336",
   primaryDark: "#CD9E0C",
