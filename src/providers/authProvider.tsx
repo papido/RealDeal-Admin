@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           }
           console.log("User data:", userData);
           setTimeout(() => {
-            router.push("/(user)/menu"); // To change to replace
+            router.push("/(admin)/menu"); // To change to replace
           }, 200);
         }
       } else {

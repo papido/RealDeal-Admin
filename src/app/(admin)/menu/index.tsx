@@ -5,10 +5,16 @@ import { useAuth } from "@/src/providers/authProvider";
 import { ProductType } from "@/src/types";
 import { router } from "expo-router";
 import React from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const MenuScreen = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const { data: products, loading } = useFetchData<ProductType>(
     "products",
@@ -23,6 +29,10 @@ const MenuScreen = () => {
 
   return (
     <>
+      {/* Logout */}
+      <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+        <Text style={styles.logoutText}>Sign Out</Text>
+      </TouchableOpacity>
       {products.length > 0 ? (
         <FlatList
           data={products}
@@ -50,5 +60,18 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+  logoutBtn: {
+    marginTop: 20,
+    backgroundColor: "#f44336",
+    padding: 14,
+    borderRadius: 10,
+    marginHorizontal: 20,
+  },
+  logoutText: {
+    textAlign: "center",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

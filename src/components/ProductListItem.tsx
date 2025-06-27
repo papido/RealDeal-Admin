@@ -1,6 +1,6 @@
 import { colors } from "@/src/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { Router, useSegments } from "expo-router";
+import { Router } from "expo-router";
 import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ProductType } from "../types";
@@ -14,14 +14,8 @@ type ProductListItemProps = {
 };
 
 const ProductListItem = ({ product, router }: ProductListItemProps) => {
-  const segments = useSegments();
-
   const handleNavigate = () => {
-    if (segments[0] === "(user)" && segments[1] === "menu") {
-      router.push(`/(user)/menu/${product.id}`);
-    } else {
-      router.push(`/(admin)/menu/${product.id}`);
-    }
+    router.push(`/(admin)/menu/${product.id}`);
   };
 
   return (

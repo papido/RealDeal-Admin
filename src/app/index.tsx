@@ -20,9 +20,6 @@ const Index = () => {
       <Text style={{ textAlign: "center", fontSize: 24, marginBottom: 30 }}>
         Choose Authentication Method
       </Text>
-      <Button onPress={() => router.push("/(user)/menu")}>
-        <Text style={{ color: "white" }}>User</Text>
-      </Button>
 
       <Button onPress={() => router.push("/(admin)")}>
         <Text style={{ color: "white" }}>Admin</Text>
