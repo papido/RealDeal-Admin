@@ -1,4 +1,4 @@
-import { firestore } from "@/config/firebase";
+import { firestore, storage } from "@/config/firebase";
 import { updateOrder } from "@/services/orderService";
 import { useDeliveryNotifications } from "@/services/useDeliveryNotifications";
 import { useFetchIdOrders } from "@/services/useFetchIdOrder";
@@ -13,8 +13,10 @@ import {
   PaymentType,
 } from "@/src/types";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
+
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +25,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -45,7 +48,8 @@ const OrdersDetailsScreen = () => {
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
-  const [loadingPayment, setLoadingPayment] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [pickedImage, setPickedImage] = useState<string | null>(null);
 
   // Use the delivery notifications hook
   const { sendDeliveryNotification, sending } = useDeliveryNotifications();
@@ -75,14 +79,11 @@ const OrdersDetailsScreen = () => {
       await fetchOrder(id);
 
       // Load payment data
-      setLoadingPayment(true);
       const payment = await getPaymentByOrderId(id);
       setPaymentData(payment);
     } catch (error) {
       console.error("Error loading initial data:", error);
       Alert.alert("Error", "Failed to load order details");
-    } finally {
-      setLoadingPayment(false);
     }
   };
 
@@ -110,6 +111,48 @@ const OrdersDetailsScreen = () => {
       Alert.alert("Warning", "Could not load customer information");
     } finally {
       setLoadingCustomer(false);
+    }
+  };
+
+  const pickImageAndUpload = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert("Permission to access media library is required.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const imageUri = result.assets[0].uri;
+      setPickedImage(imageUri);
+      uploadImageToFirebase(imageUri);
+    }
+  };
+
+  const uploadImageToFirebase = async (imageUri: string) => {
+    setUploading(true);
+    try {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+
+      const filename = `payment_proofs/${order?.uid}_${Date.now()}.jpg`;
+      const storageRef = storage().ref(filename);
+      await storageRef.put(blob);
+
+      const downloadURL = await storageRef.getDownloadURL();
+      console.log("Uploaded image URL:", downloadURL);
+
+      // Optionally update Firestore or your local state with this URL
+      setPickedImage(downloadURL); // or save to your database
+    } catch (error) {
+      console.error("Image upload failed:", error);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -305,23 +348,37 @@ const OrdersDetailsScreen = () => {
   const renderPaymentSection = () => (
     <>
       <Text style={styles.sectionTitle}>Payment Proof</Text>
-      {loadingPayment ? (
+
+      {uploading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.light.tint} />
-          <Text style={styles.loadingText}>Loading payment info...</Text>
+          <Text style={styles.loadingText}>Uploading image...</Text>
         </View>
-      ) : paymentData?.imageUrl ? (
+      ) : pickedImage || paymentData?.imageUrl ? (
         <Image
-          source={{ uri: paymentData.imageUrl }}
+          source={{ uri: pickedImage || paymentData?.imageUrl }}
           style={styles.paymentImage}
           contentFit="contain"
           placeholder={require("@assets/images/placeholder.png")}
           transition={500}
         />
       ) : (
-        <View style={styles.noPaymentContainer}>
-          <Text style={styles.noPaymentText}>No payment image available.</Text>
-        </View>
+        <TouchableOpacity
+          onPress={pickImageAndUpload}
+          style={styles.uploadButton}
+        >
+          <Text style={styles.uploadButtonText}>Upload Payment Proof</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Show a button to replace the image if already uploaded */}
+      {(pickedImage || paymentData?.imageUrl) && (
+        <TouchableOpacity
+          onPress={pickImageAndUpload}
+          style={styles.replaceButton}
+        >
+          <Text style={styles.replaceButtonText}>Replace Image</Text>
+        </TouchableOpacity>
       )}
     </>
   );
@@ -542,6 +599,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 4,
     color: "#333",
+  },
+  uploadButton: {
+    padding: 12,
+    backgroundColor: colors.primaryDark,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  uploadButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  replaceButton: {
+    marginTop: 10,
+    alignSelf: "center",
+  },
+  replaceButtonText: {
+    color: colors.light.tint,
+    textDecorationLine: "underline",
   },
 });
 

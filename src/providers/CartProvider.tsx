@@ -352,7 +352,7 @@ const CartProvider = ({ children }: PropsWithChildren) => {
     setItems([]);
     // Clear delivery info after checkout
     clearDeliveryInfo();
-    router.dismissTo("/(user)/menu");
+    router.dismissTo("/(admin)/menu");
     router.replace("/qrPayment");
   };
 
