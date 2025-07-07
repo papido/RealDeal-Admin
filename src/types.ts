@@ -9,9 +9,9 @@ export type ProductType = {
   name: string;
   description?: string;
   speciality?: string;
-  ingredients?: string;
   price?: string;
   createdAt?: Date;
+  portion?: string;
   items?: ProductItem[];
   uid?: string;
 };

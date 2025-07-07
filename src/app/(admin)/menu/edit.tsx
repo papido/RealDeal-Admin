@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -156,8 +158,12 @@ const EditProductScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: "Update Product" }} />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+      <Stack.Screen options={{ title: "Create Product" }} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {product.images.length > 0 && (
@@ -200,13 +206,12 @@ const EditProductScreen = () => {
         <Text onPress={pickImage} style={styles.textButton}>
           Select Image
         </Text>
-
         <Text style={styles.label}>Name</Text>
         <TextInput
           value={product.name}
           onChangeText={(value) => setProduct({ ...product, name: value })}
           placeholder="Product Name"
-          placeholderTextColor="#999"
+          placeholderTextColor={"gray"}
           style={styles.input}
         />
 
@@ -215,7 +220,7 @@ const EditProductScreen = () => {
           value={product.price}
           onChangeText={(value) => setProduct({ ...product, price: value })}
           placeholder="Range Price"
-          placeholderTextColor="#999"
+          placeholderTextColor={"gray"}
           style={styles.input}
         />
 
@@ -223,8 +228,8 @@ const EditProductScreen = () => {
         <TextInput
           value={product.prepTime}
           onChangeText={(value) => setProduct({ ...product, prepTime: value })}
-          placeholder="Category"
-          placeholderTextColor="#999"
+          placeholder="Preparation Time"
+          placeholderTextColor={"gray"}
           style={styles.input}
         />
 
@@ -235,7 +240,7 @@ const EditProductScreen = () => {
             setProduct({ ...product, description: value })
           }
           placeholder="Description"
-          placeholderTextColor="#999"
+          placeholderTextColor={"gray"}
           style={styles.input}
         />
 
@@ -246,18 +251,27 @@ const EditProductScreen = () => {
             setProduct({ ...product, speciality: value })
           }
           placeholder="Speciality"
-          placeholderTextColor="#999"
+          placeholderTextColor={"gray"}
+          style={styles.input}
+        />
+
+        <Text style={styles.label}>Portion</Text>
+        <TextInput
+          value={product.portion}
+          onChangeText={(value) => setProduct({ ...product, portion: value })}
+          placeholder="Portion"
+          placeholderTextColor={"gray"}
           style={styles.input}
         />
 
         <View style={styles.itemsHeader}>
-          <Text style={styles.label}>Items</Text>
+          <Text style={styles.label}>Items / Ingredients</Text>
           <Text onPress={addNewItem} style={styles.addButton}>
             Add Item
           </Text>
         </View>
 
-        {product.items?.map((item, index) => (
+        {(product.items ?? []).map((item, index) => (
           <View key={item.id} style={styles.itemContainer}>
             <TextInput
               value={item.name}
@@ -267,7 +281,7 @@ const EditProductScreen = () => {
                 setProduct({ ...product, items: updatedItems });
               }}
               placeholder="Item name"
-              placeholderTextColor="#999"
+              placeholderTextColor={"gray"}
               style={styles.input}
             />
             <TextInput
@@ -281,7 +295,7 @@ const EditProductScreen = () => {
                 setProduct({ ...product, items: updatedItems });
               }}
               placeholder="Item price"
-              placeholderTextColor="#999"
+              placeholderTextColor={"gray"}
               keyboardType="numeric"
               style={styles.input}
             />
@@ -304,17 +318,8 @@ const EditProductScreen = () => {
             <Text style={styles.textButton}>Update</Text>
           </Button>
         )}
-
-        {!loading && (
-          <Text
-            onPress={showDeleteAlert}
-            style={[styles.textButton, styles.deleteButton]}
-          >
-            Delete Product
-          </Text>
-        )}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

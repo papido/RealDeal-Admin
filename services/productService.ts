@@ -38,7 +38,7 @@ export const createProduct = async (
       price: productData.price || "RM7-RM18",
       prepTime: productData.prepTime || "",
       description: productData.description || "",
-      ingredients: productData.ingredients || "",
+      portion: productData.portion || "",
       speciality: productData.speciality || "",
       createdAt: productData.createdAt || new Date(),
       items: productData.items || [],
