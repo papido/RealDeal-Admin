@@ -17,6 +17,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import uuid from "react-native-uuid";
@@ -318,6 +319,10 @@ const EditProductScreen = () => {
             <Text style={styles.textButton}>Update</Text>
           </Button>
         )}
+
+        <TouchableOpacity onPress={showDeleteAlert}>
+          <Text style={styles.deleteButton}>Delete</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -354,7 +359,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   deleteButton: {
+    alignSelf: "center",
+    fontWeight: "bold",
     color: "red",
+    marginVertical: 10,
   },
   itemsHeader: {
     flexDirection: "row",
