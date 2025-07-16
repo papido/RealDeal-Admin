@@ -206,6 +206,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           uid: userCredential.user.uid,
           createdAt: firestore.FieldValue.serverTimestamp(),
           address: "",
+          admin: true,
         },
         { merge: true }
       );
@@ -239,6 +240,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         uid: response.user.uid,
         createdAt: firestore.FieldValue.serverTimestamp(),
         address: "",
+        admin: true,
       });
 
       console.log("✅ Email login successful");

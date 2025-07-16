@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "RealDeal",
+    "name": "RealDeal Admin",
     "slug": "RealDeal",
     "version": "1.0.0",
     "entryPoint": "./src/app/index.tsx",
     "orientation": "portrait",
-    "icon": "./assets/images/iconImage.png",
+    "icon": "./assets/images/adminIcon.png",
     "scheme": "realdeal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,12 +19,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/iconImage.png",
+        "foregroundImage": "./assets/images/adminIcon.png",
         "backgroundColor": "#ffffff",
         "resizeMode": "contain"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.fauzanafk.RealDeal",
+      "package": "com.fauzanafk.realdealadmin",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
