@@ -37,11 +37,11 @@ const MenuScreen = () => {
         <FlatList
           data={products}
           renderItem={({ item }) => (
-            <ProductListItem product={item} router={router} />
+            <View style={{ flex: 1, margin: 5 }}>
+              <ProductListItem product={item} router={router} />
+            </View>
           )}
-          numColumns={2}
-          contentContainerStyle={{ gap: 10, padding: 10 }}
-          columnWrapperStyle={{ gap: 10 }}
+          keyExtractor={(item) => item.id}
         />
       ) : (
         <View
@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     marginHorizontal: 20,
+    marginBottom: 10,
   },
   logoutText: {
     textAlign: "center",
