@@ -11,7 +11,6 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnable
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
-import com.reactnativereceivesharingintent.ReceiveSharingIntentModule  // Add this import
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,15 +22,6 @@ class MainActivity : ReactActivity() {
     SplashScreenManager.registerOnActivity(this)
     // @generated end expo-splashscreen
     super.onCreate(null)
-    
-    // Add this line for sharing intent support
-    ReceiveSharingIntentModule.clearReceivedFiles(this)
-  }
-
-  // Add this method for handling new intents
-  override fun onNewIntent(intent: Intent?) {
-    super.onNewIntent(intent)
-    setIntent(intent)
   }
 
   /**
